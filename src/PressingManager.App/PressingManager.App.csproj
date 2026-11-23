@@ -1,3 +1,4 @@
+
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
@@ -16,5 +17,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources/Images/PressingManagerLogo.png" />
+    <Resource Include="Resources/Images/PressingManager_FondGauche.png" />
+  </ItemGroup>
 
 </Project>
