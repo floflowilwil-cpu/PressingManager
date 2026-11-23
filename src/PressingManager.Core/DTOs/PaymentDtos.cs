@@ -3,6 +3,14 @@ using PressingManager.Core.Enums;
 namespace PressingManager.Core.DTOs;
 
 /// <summary>
+/// Informations minimales d'une commande necessaires au module paiement (fournies par le module commandes).
+/// </summary>
+public sealed record OrderBillingInfoDto(
+    int OrderId,
+    decimal TotalAmount,
+    bool IsCancelled);
+
+/// <summary>
 /// Demande d'enregistrement d'un paiement client.
 /// ReceivedByUserId est fourni par l'appelant (utilisateur connecte).
 /// </summary>
