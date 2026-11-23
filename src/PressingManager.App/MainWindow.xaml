@@ -149,7 +149,7 @@
                                    TextWrapping="Wrap"/>
 
                         <TextBlock x:Name="txtSubtitle"
-                                   Text="Connectez-vous à votre espace de travail"
+                                   Text="{Binding Subtitle}"
                                    FontSize="16"
                                    Foreground="#174A91"
                                    Margin="0,10,0,25"
@@ -237,9 +237,11 @@
 
                                 <!-- BOUTON CONNEXION -->
                                 <Button x:Name="btnLogin"
-                                        Content="➜   Se connecter"
-                                        Height="58"
-                                        Style="{StaticResource PrimaryButton}"/>
+                                    Content="{Binding SubmitLabel}"
+                                    Height="58"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Click="BtnLogin_Click"
+                                />
 
                                 <!-- MOT DE PASSE OUBLIÉ -->
                                 <TextBlock x:Name="txtForgotPassword"
