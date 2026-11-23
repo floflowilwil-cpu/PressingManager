@@ -27,6 +27,10 @@ public static class DependencyInjection
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
 
+        // Module clients et commandes (Personne 2)
+        services.AddSingleton<ICustomerService, CustomerService>();
+        services.AddSingleton<IOrderService, OrderService>();
+
         // Module paiements, caisse et depenses (Personne 4)
         services.AddSingleton<IOrderBillingInfoProvider, EfOrderBillingInfoProvider>();
         services.AddSingleton<IPaymentService, PaymentService>();
