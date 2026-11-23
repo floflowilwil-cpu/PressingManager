@@ -18,6 +18,20 @@ public class PressingDbContext : DbContext
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // Module clients et commandes (Personne 2)
+    public DbSet<Customer> Customers => Set<Customer>();
+
+    public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+    // Module paiements, caisse et depenses (Personne 4)
+    public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<Expense> Expenses => Set<Expense>();
+
+    public DbSet<CashSession> CashSessions => Set<CashSession>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PressingDbContext).Assembly);

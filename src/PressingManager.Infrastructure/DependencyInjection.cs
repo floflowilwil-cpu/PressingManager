@@ -26,6 +26,11 @@ public static class DependencyInjection
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
 
+        // Module paiements, caisse et depenses (Personne 4)
+        services.AddSingleton<IPaymentService, PaymentService>();
+        services.AddSingleton<IExpenseService, ExpenseService>();
+        services.AddSingleton<ICashService, CashService>();
+
         return services;
     }
 }

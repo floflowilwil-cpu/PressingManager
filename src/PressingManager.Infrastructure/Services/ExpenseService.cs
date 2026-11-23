@@ -1,7 +1,12 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Entities;
+using PressingManager.Core.Enums;
 using PressingManager.Core.Interfaces;
+using PressingManager.Infrastructure.Data;
+using PressingManager.Infrastructure.Repositories;
 
 namespace PressingManager.Infrastructure.Services;
 
@@ -12,13 +17,37 @@ public sealed class ExpenseService : IExpenseService
 {
     private readonly IExpenseRepository _expenseRepository;
     private readonly ICashSessionRepository _cashSessionRepository;
+    private readonly ICurrentUserContext? _session;
+    private readonly IAuditService? _audit;
+    private readonly TimeProvider _time;
+
+    [ActivatorUtilitiesConstructor]
+    public ExpenseService(
+        IDbContextFactory<PressingDbContext> dbFactory,
+        ICurrentUserContext session,
+        IAuditService audit,
+        TimeProvider time)
+        : this(
+            new EfExpenseRepository(dbFactory),
+            new EfCashSessionRepository(dbFactory),
+            session ?? throw new ArgumentNullException(nameof(session)),
+            audit ?? throw new ArgumentNullException(nameof(audit)),
+            time ?? throw new ArgumentNullException(nameof(time)))
+    {
+    }
 
     public ExpenseService(
         IExpenseRepository expenseRepository,
-        ICashSessionRepository cashSessionRepository)
+        ICashSessionRepository cashSessionRepository,
+        ICurrentUserContext? session = null,
+        IAuditService? audit = null,
+        TimeProvider? time = null)
     {
         _expenseRepository = expenseRepository ?? throw new ArgumentNullException(nameof(expenseRepository));
         _cashSessionRepository = cashSessionRepository ?? throw new ArgumentNullException(nameof(cashSessionRepository));
+        _session = session;
+        _audit = audit;
+        _time = time ?? TimeProvider.System;
     }
 
     public async Task<ExpenseDto> CreateAsync(
@@ -26,6 +55,7 @@ public sealed class ExpenseService : IExpenseService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session?.Require(Permission.ManageExpenses);
 
         if (string.IsNullOrWhiteSpace(request.Category))
         {
@@ -45,6 +75,7 @@ public sealed class ExpenseService : IExpenseService
                     "Impossible d'enregistrer une depense en especes : aucune session de caisse n'est ouverte.");
         }
 
+        var userId = _session?.CurrentUser?.Id ?? request.CreatedByUserId;
         var expense = new Expense
         {
             Date = request.Date,
@@ -52,7 +83,7 @@ public sealed class ExpenseService : IExpenseService
             Amount = request.Amount,
             Method = request.Method,
             Comment = string.IsNullOrWhiteSpace(request.Comment) ? null : request.Comment.Trim(),
-            CreatedByUserId = request.CreatedByUserId,
+            CreatedByUserId = userId,
             CashSessionId = openSession?.Id
         };
 
@@ -82,6 +113,8 @@ public sealed class ExpenseService : IExpenseService
         int cancelledByUserId,
         CancellationToken cancellationToken = default)
     {
+        _session?.Require(Permission.ManageExpenses);
+
         var expense = await _expenseRepository.GetByIdAsync(expenseId, cancellationToken)
             ?? throw new InvalidOperationException($"Depense #{expenseId} introuvable.");
 
@@ -96,12 +129,24 @@ public sealed class ExpenseService : IExpenseService
                 "Un motif est obligatoire pour annuler une depense.");
         }
 
+        var userId = _session?.CurrentUser?.Id ?? cancelledByUserId;
         expense.IsCancelled = true;
         expense.CancelReason = reason.Trim();
-        expense.CancelledByUserId = cancelledByUserId;
-        expense.CancelledAt = DateTime.UtcNow;
+        expense.CancelledByUserId = userId;
+        expense.CancelledAt = _time.GetUtcNow().UtcDateTime;
 
         await _expenseRepository.UpdateAsync(expense, cancellationToken);
+
+        if (_audit is not null)
+        {
+            await _audit.LogAsync(
+                "ExpenseCancelled",
+                nameof(Expense),
+                expense.Id.ToString(),
+                $"Annulation depense ({expense.Amount}) : {expense.CancelReason}",
+                userId,
+                cancellationToken);
+        }
     }
 
     private static ExpenseDto ToDto(Expense expense) => new(
