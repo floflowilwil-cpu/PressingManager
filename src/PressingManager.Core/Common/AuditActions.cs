@@ -18,6 +18,7 @@ public static class AuditActions
     public const string UserDeactivated = "UserDeactivated";
     public const string PasswordReset = "PasswordReset";
     public const string PasswordChanged = "PasswordChanged";
+    public const string ReportExported = "ReportExported";
 
     // Operations sensibles des autres modules (documentation, section 11)
     public const string PaymentRefunded = "PaymentRefunded";
