@@ -202,11 +202,17 @@ public sealed class EfOrderBillingInfoProvider : IOrderBillingInfoProvider
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var order = await db.Orders
             .AsNoTracking()
+            .Include(o => o.Customer)
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
 
         return order is null
             ? null
-            : new OrderBillingInfoDto(order.Id, order.Total, order.Status == OrderStatus.Cancelled);
+            : new OrderBillingInfoDto(
+                order.Id,
+                order.Total,
+                order.Status == OrderStatus.Cancelled,
+                order.OrderNumber,
+                order.Customer?.FullName);
     }
 }

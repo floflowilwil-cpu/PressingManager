@@ -8,7 +8,9 @@ namespace PressingManager.Core.DTOs;
 public sealed record OrderBillingInfoDto(
     int OrderId,
     decimal TotalAmount,
-    bool IsCancelled);
+    bool IsCancelled,
+    string? OrderNumber = null,
+    string? CustomerName = null);
 
 /// <summary>
 /// Demande d'enregistrement d'un paiement client.
@@ -43,3 +45,23 @@ public sealed record PaymentDto(
     string? CancelReason,
     int? CancelledByUserId,
     DateTime? CancelledAt);
+
+/// <summary>Donnees completes d'un recu genere apres validation d'un paiement.</summary>
+public sealed record PaymentReceiptDto(
+    string ReceiptNumber,
+    int PaymentId,
+    int OrderId,
+    string OrderNumber,
+    string CustomerName,
+    decimal OrderTotal,
+    decimal AmountPaid,
+    decimal TotalPaidOnOrder,
+    decimal RemainingBalance,
+    PaymentMethod Method,
+    string MethodLabel,
+    string? Reference,
+    DateTime PaidAt,
+    string CashierName)
+{
+    public bool IsFullyPaid => RemainingBalance <= 0m;
+}

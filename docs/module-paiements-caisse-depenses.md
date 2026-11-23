@@ -18,10 +18,17 @@ Ce module gère les encaissements clients, les sessions de caisse journalières 
 - **Règles métier pures** (`src/PressingManager.Core/Common/`) :
   - `PaymentRules` : calcul du solde restant, validation des montants, blocage du trop-perçu, référence unique Mobile Money, contrôle d'ouverture de caisse et motif d'annulation/remboursement obligatoire.
   - `CashCalculator` : calcul du montant théorique en espèces et de l'écart à la clôture.
+  - `PaymentReceiptGenerator` : numérotation officielle des reçus (`REC-YYYYMMDD-0001`), libellés français des modes/statuts et formatage texte des reçus.
 - **DTOs & Interfaces** (`src/PressingManager.Core/DTOs/` et `Interfaces/`) :
-  - `IPaymentService`, `IExpenseService`, `ICashService`
+  - `IPaymentService`, `IExpenseService`, `ICashService`, `PaymentReceiptDto`
   - `IPaymentRepository`, `IExpenseRepository`, `ICashSessionRepository`
   - `IOrderBillingInfoProvider` (contrat de lecture des commandes)
+
+### `PressingManager.App` (Vues WPF stylées & ViewModel)
+- **ViewModel** : `ViewModels/PaymentManagementViewModel.cs`
+- **Vues** :
+  - `Views/PaymentManagementView.xaml` : cartes visuelles des moyens de paiement (Espèces, MTN Mobile Money, Orange Money, Autre), statut de caisse, bandeau de confirmation et historique.
+  - `Views/PaymentReceiptWindow.xaml` : illustration vectorielle de validation réussie, aperçu du reçu officiel avec code-barres vectoriel, impression / PDF Windows (`PrintDialog`) et export `.txt`.
 
 ### `PressingManager.Infrastructure` (EF Core, Services et Injection)
 - **Base de données & Configurations** (`Data/`) :

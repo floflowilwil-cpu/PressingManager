@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PressingManager.Core.Interfaces;
 using PressingManager.Infrastructure.Data;
+using PressingManager.Infrastructure.Repositories;
 using PressingManager.Infrastructure.Services;
 
 namespace PressingManager.Infrastructure;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddSingleton<IUserService, UserService>();
 
         // Module paiements, caisse et depenses (Personne 4)
+        services.AddSingleton<IOrderBillingInfoProvider, EfOrderBillingInfoProvider>();
         services.AddSingleton<IPaymentService, PaymentService>();
         services.AddSingleton<IExpenseService, ExpenseService>();
         services.AddSingleton<ICashService, CashService>();
