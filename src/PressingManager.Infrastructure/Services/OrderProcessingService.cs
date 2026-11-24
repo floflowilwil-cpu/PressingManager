@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
@@ -19,11 +20,19 @@ public sealed class OrderProcessingService : IOrderProcessingService
     private const int CommentMaxLength = 500;
 
     private readonly IDbContextFactory<PressingDbContext> _dbFactory;
+    private readonly ICurrentUserContext _session;
+    private readonly IAuditService _audit;
     private readonly TimeProvider _time;
 
-    public OrderProcessingService(IDbContextFactory<PressingDbContext> dbFactory, TimeProvider time)
+    public OrderProcessingService(
+        IDbContextFactory<PressingDbContext> dbFactory,
+        ICurrentUserContext session,
+        IAuditService audit,
+        TimeProvider time)
     {
         _dbFactory = dbFactory;
+        _session = session;
+        _audit = audit;
         _time = time;
     }
 
@@ -32,6 +41,7 @@ public sealed class OrderProcessingService : IOrderProcessingService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session.Require(Permission.UpdateOrderStatus);
 
         if (!Enum.IsDefined(request.NewStatus))
         {
@@ -65,6 +75,12 @@ public sealed class OrderProcessingService : IOrderProcessingService
                 $"Transition refusée pour la commande {order.OrderNumber} : {current} vers {request.NewStatus}.");
         }
 
+        // Retour en arriere : action sensible, reservee a qui a le droit de corriger.
+        if (!allowedInNormalFlow)
+        {
+            _session.Require(Permission.CorrectOrderStatus);
+        }
+
         var entry = new OrderStatusHistory
         {
             OrderId = order.Id,
@@ -81,6 +97,8 @@ public sealed class OrderProcessingService : IOrderProcessingService
         db.OrderStatusHistory.Add(entry);
         await db.SaveChangesAsync(cancellationToken);
 
+        await AuditSensitiveChangeAsync(order, entry, cancellationToken);
+
         return ToDto(entry);
     }
 
@@ -88,6 +106,8 @@ public sealed class OrderProcessingService : IOrderProcessingService
         int orderId,
         CancellationToken cancellationToken = default)
     {
+        _session.Require(Permission.ViewOrders);
+
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
         var events = await db.OrderStatusHistory
@@ -100,8 +120,97 @@ public sealed class OrderProcessingService : IOrderProcessingService
         return events.Select(h => ToDto(h)).ToList();
     }
 
+    public async Task<IReadOnlyList<ProcessingOrderDto>> GetOrdersAsync(
+        OrderStatus? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        _session.Require(Permission.ViewOrders);
+
+        if (status is { } requested && !Enum.IsDefined(requested))
+        {
+            throw new BusinessRuleException("Le statut demandé est inconnu.");
+        }
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        IQueryable<Order> query = db.Orders
+            .AsNoTracking()
+            .Include(o => o.Customer)
+            .Include(o => o.Items);
+
+        query = status is { } wanted
+            ? query.Where(o => o.Status == wanted)
+            : query.Where(o => o.Status != OrderStatus.Delivered && o.Status != OrderStatus.Cancelled);
+
+        var orders = await query.ToListAsync(cancellationToken);
+        var now = _time.GetUtcNow().UtcDateTime;
+
+        // Tri en memoire : SQLite ne sait pas ordonner proprement les dates nullables.
+        return orders
+            .OrderBy(o => o.ExpectedDate ?? DateTime.MaxValue)
+            .ThenBy(o => o.CreatedAt)
+            .ThenBy(o => o.Id)
+            .Select(o => ToDto(o, now))
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<ProcessingOrderDto>> GetOverdueOrdersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var open = await GetOrdersAsync(status: null, cancellationToken);
+        return open.Where(o => o.IsOverdue).ToList();
+    }
+
     public IReadOnlyCollection<OrderStatus> GetAllowedNextStatuses(OrderStatus current) =>
         OrderStatusRules.GetNextStatuses(current);
+
+    /// <summary>Annulations et corrections : operations sensibles tracees dans le journal d'audit (section 11).</summary>
+    private async Task AuditSensitiveChangeAsync(
+        Order order,
+        OrderStatusHistory entry,
+        CancellationToken cancellationToken)
+    {
+        string? action = null;
+
+        if (entry.ToStatus == OrderStatus.Cancelled)
+        {
+            action = AuditActions.OrderCancelled;
+        }
+        else if (entry.IsCorrection)
+        {
+            action = AuditActions.OrderStatusCorrected;
+        }
+
+        if (action is null)
+        {
+            return;
+        }
+
+        var details = $"{order.OrderNumber} : {entry.FromStatus} -> {entry.ToStatus}";
+        if (!string.IsNullOrEmpty(entry.Comment))
+        {
+            details += $" ({entry.Comment})";
+        }
+
+        await _audit.LogAsync(
+            action,
+            nameof(Order),
+            order.Id.ToString(CultureInfo.InvariantCulture),
+            details,
+            entry.ChangedByUserId,
+            cancellationToken);
+    }
+
+    private static ProcessingOrderDto ToDto(Order order, DateTime nowUtc) =>
+        new(
+            order.Id,
+            order.OrderNumber,
+            order.Customer?.FullName ?? string.Empty,
+            order.Status,
+            order.CreatedAt,
+            order.ExpectedDate,
+            order.Items.Sum(i => i.Quantity),
+            OrderStatusRules.IsOverdue(order.Status, order.ExpectedDate, nowUtc));
 
     private static OrderStatusHistoryDto ToDto(OrderStatusHistory h) =>
         new(h.Id, h.OrderId, h.FromStatus, h.ToStatus, h.ChangedByUserId, h.ChangedAt, h.IsCorrection, h.Comment);

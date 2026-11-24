@@ -20,6 +20,22 @@ public static class OrderStatusRules
             [OrderStatus.Cancelled] = Array.Empty<OrderStatus>()
         };
 
+    /// <summary>Commande terminee : livree ou annulee (plus rien a traiter).</summary>
+    public static bool IsClosed(OrderStatus status) =>
+        status is OrderStatus.Delivered or OrderStatus.Cancelled;
+
+    /// <summary>
+    /// Commande en retard : la date prevue est passee (jour calendaire) alors que la commande n'est pas
+    /// encore prete. Une commande prete a recuperer est signalee a part (IsReadyForPickup), pas comme retard.
+    /// </summary>
+    public static bool IsOverdue(OrderStatus status, DateTime? expectedDate, DateTime nowUtc) =>
+        (status is OrderStatus.Received
+            or OrderStatus.AwaitingProcessing
+            or OrderStatus.Cleaning
+            or OrderStatus.Ironing)
+        && expectedDate is { } expected
+        && expected.Date < nowUtc.Date;
+
     /// <summary>Statuts atteignables depuis <paramref name="from"/> dans le flux normal.</summary>
     public static IReadOnlyCollection<OrderStatus> GetNextStatuses(OrderStatus from) => Allowed[from];
 

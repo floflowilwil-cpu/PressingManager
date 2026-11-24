@@ -21,8 +21,11 @@ public class ServiceCatalogServiceTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
-    private ServiceCatalogService CreateService() =>
-        new(_db, new AuditService(_db, new CurrentUserContext(), _clock), _clock);
+    private ServiceCatalogService CreateService()
+    {
+        var session = ProcessingTestSession.SignedIn(userId: _userId);
+        return new(_db, session, new AuditService(_db, session, _clock), _clock);
+    }
 
     private int CountPriceAuditLogs()
     {

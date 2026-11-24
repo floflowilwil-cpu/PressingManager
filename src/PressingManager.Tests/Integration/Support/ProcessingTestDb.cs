@@ -46,7 +46,10 @@ public sealed class ProcessingTestDb : IDbContextFactory<PressingDbContext>, IDi
     }
 
     /// <summary>Insere un client et une commande, et renvoie l'identifiant de la commande.</summary>
-    public int AddOrder(OrderStatus status = OrderStatus.Received)
+    public int AddOrder(
+        OrderStatus status = OrderStatus.Received,
+        DateTime? expectedDate = null,
+        int itemQuantity = 0)
     {
         using var db = CreateDbContext();
         var number = ++_sequence;
@@ -63,8 +66,25 @@ public sealed class ProcessingTestDb : IDbContextFactory<PressingDbContext>, IDi
             OrderNumber = $"CMD-TEST-{number:0000}",
             Customer = customer,
             Status = status,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ExpectedDate = expectedDate
         };
+
+        if (itemQuantity > 0)
+        {
+            // La ligne doit referencer un vrai service (cle etrangere).
+            var service = new Service { Name = $"Service test {number}" };
+            db.Services.Add(service);
+            db.SaveChanges();
+
+            order.Items.Add(new OrderItem
+            {
+                ServiceId = service.Id,
+                ItemType = "Chemise",
+                Quantity = itemQuantity,
+                UnitPrice = 500m
+            });
+        }
 
         db.Orders.Add(order);
         db.SaveChanges();

@@ -20,6 +20,12 @@ public sealed class TestDb : IDbContextFactory<PressingDbContext>, IDisposable
 
         using var db = CreateDbContext();
         db.Database.EnsureCreated();
+
+        // Services 1 et 2 : les tests creent des commandes dont les lignes les referencent (cle etrangere).
+        db.Services.AddRange(
+            new PressingManager.Core.Entities.Service { Id = 1, Name = "Lavage" },
+            new PressingManager.Core.Entities.Service { Id = 2, Name = "Repassage" });
+        db.SaveChanges();
     }
 
     public PressingDbContext CreateDbContext() => new(_options);
