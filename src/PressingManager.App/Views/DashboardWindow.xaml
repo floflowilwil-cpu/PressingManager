@@ -135,25 +135,10 @@
                     <Button Content="{loc:T Nav_Garments}"
                             Style="{StaticResource SidebarButton}"/>
 
-                    <Button x:Name="BtnProcessing"
-                            Content="{loc:T Nav_Processing}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnProcessing_Click"/>
-
-                    <Button x:Name="BtnServices"
-                            Content="{loc:T Nav_Services}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnServices_Click"/>
-
                     <Button x:Name="BtnPayments"
                             Content="{loc:T Nav_Payments}"
                             Style="{StaticResource SidebarButton}"
                             Click="BtnPayments_Click"/>
-
-                    <Button x:Name="BtnStock"
-                            Content="{loc:T Nav_Stock}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnStock_Click"/>
 
                     <Button x:Name="BtnStatistics"
                             Content="{loc:T Nav_Statistics}"
@@ -177,7 +162,12 @@
         </Border>
 
         <!-- CONTENU PRINCIPAL -->
-        <Grid x:Name="DashboardHomeContent" Grid.Column="1" Margin="32">
+        <ScrollViewer x:Name="DashboardHomeContent"
+                      Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Margin="32">
+        <Grid x:Name="DashboardHomeLayout">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -308,6 +298,36 @@
 
         </Grid>
 
+        <!-- MODULES DE LA PERSONNE 3 : regroupes dans le tableau de bord -->
+        <StackPanel x:Name="ProcessingDashboardSection" Margin="0,28,0,0">
+            <TextBlock Text="TRAITEMENT DES COMMANDES"
+                       FontSize="18" FontWeight="Bold" Foreground="#12365D"
+                       Margin="0,0,0,12"/>
+            <Border Background="White" CornerRadius="12" Padding="8">
+                <ContentControl x:Name="ProcessingDashboardHost" Height="650"/>
+            </Border>
+        </StackPanel>
+
+        <StackPanel x:Name="ServicesDashboardSection" Margin="0,28,0,0">
+            <TextBlock Text="SERVICES ET TARIFS"
+                       FontSize="18" FontWeight="Bold" Foreground="#12365D"
+                       Margin="0,0,0,12"/>
+            <Border Background="White" CornerRadius="12" Padding="8">
+                <ContentControl x:Name="ServicesDashboardHost" Height="650"/>
+            </Border>
+        </StackPanel>
+
+        <StackPanel x:Name="StockDashboardSection" Margin="0,28,0,32">
+            <TextBlock Text="GESTION DES STOCKS"
+                       FontSize="18" FontWeight="Bold" Foreground="#12365D"
+                       Margin="0,0,0,12"/>
+            <Border Background="White" CornerRadius="12" Padding="8">
+                <ContentControl x:Name="StockDashboardHost" Height="650"/>
+            </Border>
+        </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+
         <!-- MODULE PAIEMENTS, CAISSE ET DEPENSES (Personne 4) -->
         <ContentControl x:Name="PaymentsContentHost" Grid.Column="1" Visibility="Collapsed"/>
 
@@ -317,9 +337,5 @@
         <!-- MODULE UTILISATEURS (Personne 5) : meme zone blanche -->
         <ContentControl x:Name="UsersContentHost" Grid.Column="1" Visibility="Collapsed"/>
 
-        <!-- MODULE TRAITEMENT, SERVICES, TARIFS ET STOCKS (Personne 3) : meme zone blanche -->
-        <ContentControl x:Name="ProcessingContentHost" Grid.Column="1" Visibility="Collapsed"/>
-        <ContentControl x:Name="ServicesContentHost" Grid.Column="1" Visibility="Collapsed"/>
-        <ContentControl x:Name="StockContentHost" Grid.Column="1" Visibility="Collapsed"/>
     </Grid>
 </Window>
