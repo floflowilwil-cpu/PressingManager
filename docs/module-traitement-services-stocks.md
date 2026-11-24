@@ -20,15 +20,15 @@ erreurs metier en `BusinessRuleException`, enregistrement en singleton. Dans `Ad
 services.AddProcessingAndInventoryServices();
 ```
 
-Donnees de depart facultatives (services et produits d'exemple, tarifs a ajuster) :
-`ProcessingSeed.Seed(db);` apres `db.Database.Migrate();` dans `App.xaml.cs`.
+Donnees de depart (services et produits d'exemple, tarifs a ajuster avec le gerant) :
+`ProcessingSeed.Seed(db);` apres `db.Database.Migrate();` dans `App.xaml.cs`, uniquement en `DEBUG` (`#if DEBUG`) pour ne pas mettre de tarifs inventes dans une base reelle. En production, le gerant cree ses services depuis l'ecran Services et tarifs.
 
 ## Regles implementees
 
 - Tarif : un nouveau tarif cloture l'ancien (`ValidTo`) pour la meme unite ; l'historique est conserve. Meme montant = aucun changement. Chaque changement est ecrit dans `AuditLogs` (action `ServicePriceChanged`).
 - Stock : jamais stocke, recalcule depuis les mouvements. Une sortie ou un ajustement a la baisse qui rendrait le stock negatif est refuse.
 - Statuts : le statut de reference est `Order.Status`. Un changement valide met a jour la commande et ajoute un evenement dans `OrderStatusHistory` en une seule sauvegarde. Les transitions sont controlees par `OrderStatusRules` ; un retour en arriere autorise est marque `IsCorrection`.
-- Cles etrangeres : `OrderStatusHistory.OrderId` vers `Orders`, `OrderStatusHistory.ChangedByUserId` et `StockMovement.UserId` vers `Users`.
+- Cles etrangeres : `OrderItem.ServiceId` vers `Services` (Restrict : un service utilise se desactive, il ne se supprime pas ; `OrderService.CreateAsync` refuse un service inconnu ou desactive avec un message clair), `OrderStatusHistory.OrderId` vers `Orders`, `OrderStatusHistory.ChangedByUserId` et `StockMovement.UserId` vers `Users`.
 
 ## Permissions (controlees dans les services, via `ICurrentUserContext.Require`)
 
@@ -53,4 +53,3 @@ Les annulations (`OrderCancelled`) et les corrections de statut (`OrderStatusCor
 ## Limites connues
 
 - L'historique de statut commence au premier changement ; il n'est pas reconstitue pour les commandes creees avant.
-- `OrderItem.ServiceId` n'a pas de cle etrangere vers `Services` (a convenir avec la personne 2).
