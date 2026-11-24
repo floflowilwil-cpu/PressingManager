@@ -143,8 +143,10 @@
                             Style="{StaticResource SidebarButton}"
                             Click="BtnStatistics_Click"/>
 
-                    <Button Content="Utilisateurs"
-                            Style="{StaticResource SidebarButton}"/>
+                    <Button x:Name="BtnUsers"
+                            Content="Utilisateurs"
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnUsers_Click"/>
                 </StackPanel>
 
                 <TextBlock DockPanel.Dock="Bottom"
@@ -293,5 +295,8 @@
 
         <!-- MODULE RAPPORTS ET STATISTIQUES (Personne 5) : meme zone blanche, le menu reste visible -->
         <ContentControl x:Name="StatisticsContentHost" Grid.Column="1" Visibility="Collapsed"/>
+
+        <!-- MODULE UTILISATEURS (Personne 5) -->
+        <ContentControl x:Name="UsersContentHost" Grid.Column="1" Visibility="Collapsed"/>
     </Grid>
 </Window>
