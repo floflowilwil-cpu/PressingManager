@@ -70,6 +70,15 @@ namespace PressingManager.Core.DTOs
         decimal Total,
         string? Notes,
         List<OrderItemDto> Items);
+
+    // Critères de recherche de commandes (tous facultatifs).
+    // SearchText : numéro de commande, nom ou téléphone du client.
+    // FromDate / ToDate : jours inclus, d'après la date de création (heure locale).
+    public record OrderSearchDto(
+        string? SearchText = null,
+        OrderStatus? Status = null,
+        DateTime? FromDate = null,
+        DateTime? ToDate = null);
 }
 
 namespace PressingManager.Core.Interfaces
@@ -99,6 +108,15 @@ namespace PressingManager.Core.Interfaces
         Task DeactivateAsync(
             int id,
             CancellationToken cancellationToken = default);
+
+        // Clients désactivés (pour proposer une réactivation)
+        Task<IReadOnlyList<CustomerDto>> SearchInactiveAsync(
+            string searchText,
+            CancellationToken cancellationToken = default);
+
+        Task<CustomerDto> ReactivateAsync(
+            int id,
+            CancellationToken cancellationToken = default);
     }
 
     public interface IOrderService
@@ -112,9 +130,14 @@ namespace PressingManager.Core.Interfaces
             string orderNumber,
             CancellationToken cancellationToken = default);
 
-        // Ajout de la personne 2
+        // Ajouts de la personne 2
         Task<IReadOnlyList<OrderDetailsDto>> GetByCustomerAsync(
             int customerId,
+            CancellationToken cancellationToken = default);
+
+        // Recherche filtrée (200 résultats maximum, les plus récents d'abord)
+        Task<IReadOnlyList<OrderDetailsDto>> SearchAsync(
+            OrderSearchDto filter,
             CancellationToken cancellationToken = default);
     }
 }
