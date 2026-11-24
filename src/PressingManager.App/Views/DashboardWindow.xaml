@@ -113,6 +113,7 @@
                                Margin="0,2,0,0"/>
                 </StackPanel>
 
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Text="{loc:T Nav_MainMenu}"
                                Foreground="#91A8C2"
@@ -134,10 +135,25 @@
                     <Button Content="{loc:T Nav_Garments}"
                             Style="{StaticResource SidebarButton}"/>
 
+                    <Button x:Name="BtnProcessing"
+                            Content="{loc:T Nav_Processing}"
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnProcessing_Click"/>
+
+                    <Button x:Name="BtnServices"
+                            Content="{loc:T Nav_Services}"
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnServices_Click"/>
+
                     <Button x:Name="BtnPayments"
                             Content="{loc:T Nav_Payments}"
                             Style="{StaticResource SidebarButton}"
                             Click="BtnPayments_Click"/>
+
+                    <Button x:Name="BtnStock"
+                            Content="{loc:T Nav_Stock}"
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnStock_Click"/>
 
                     <Button x:Name="BtnStatistics"
                             Content="{loc:T Nav_Statistics}"
@@ -149,6 +165,7 @@
                             Style="{StaticResource SidebarButton}"
                             Click="BtnUsers_Click"/>
                 </StackPanel>
+                </ScrollViewer>
 
                 <TextBlock DockPanel.Dock="Bottom"
                            Text="Pressing Manager © 2026"
@@ -299,5 +316,10 @@
 
         <!-- MODULE UTILISATEURS (Personne 5) : meme zone blanche -->
         <ContentControl x:Name="UsersContentHost" Grid.Column="1" Visibility="Collapsed"/>
+
+        <!-- MODULE TRAITEMENT, SERVICES, TARIFS ET STOCKS (Personne 3) : meme zone blanche -->
+        <ContentControl x:Name="ProcessingContentHost" Grid.Column="1" Visibility="Collapsed"/>
+        <ContentControl x:Name="ServicesContentHost" Grid.Column="1" Visibility="Collapsed"/>
+        <ContentControl x:Name="StockContentHost" Grid.Column="1" Visibility="Collapsed"/>
     </Grid>
 </Window>

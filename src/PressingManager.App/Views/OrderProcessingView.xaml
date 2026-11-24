@@ -1,0 +1,187 @@
+<UserControl x:Class="PressingManager.App.Views.OrderProcessingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:PressingManager.App.Localization"
+             Background="#F3F6FB">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="#12365D" />
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,12,0,0" />
+            <Setter Property="Background" Value="#0864D9" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style x:Key="LightButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="#12365D" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#CBD5E0" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
+
+        <!-- Commande en retard : rouge ; prete a recuperer : vert -->
+        <Style x:Key="OrderRowStyle" TargetType="DataGridRow">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsReadyForPickup}" Value="True">
+                    <Setter Property="Foreground" Value="#16845B" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                    <Setter Property="Foreground" Value="#C0392B" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="32">
+        <!-- ACCES REFUSE (role sans la permission ViewOrders) -->
+        <Border Background="White" CornerRadius="10" Padding="30" VerticalAlignment="Top"
+                Visibility="{Binding IsAccessDenied, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{loc:T Proc_AccessDenied}" FontSize="16" Foreground="#C0392B" TextWrapping="Wrap" />
+        </Border>
+
+        <Grid Visibility="{Binding CanView, Converter={StaticResource BoolToVisibility}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="360" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,18">
+                <Border Width="38" Height="38" CornerRadius="10" Background="#0F2A4A" Margin="0,0,12,0">
+                    <Viewbox Width="22" Height="22">
+                        <Canvas Width="24" Height="24">
+                            <Path Stroke="#14B8A6" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  Data="M12,3 C7,3 3,7 3,12 C3,17 7,21 12,21 C17,21 21,17 21,12 C21,7 17,3 12,3 Z M12,7 L12,12 L15.5,14" />
+                        </Canvas>
+                    </Viewbox>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{loc:T Proc_Title}" FontSize="22" FontWeight="Bold" Foreground="#0F2A4A" />
+                    <TextBlock Text="{loc:T Proc_Subtitle}" FontSize="12" Foreground="#64748B" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- GAUCHE : file de traitement -->
+            <Border Grid.Row="1" Background="White" CornerRadius="10" Padding="12" Margin="0,0,16,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Margin="0,0,0,10">
+                        <Button DockPanel.Dock="Right" Content="{loc:T Common_Refresh}" Command="{Binding LoadCommand}"
+                                Style="{StaticResource LightButton}" Margin="12,0,0,0" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding SummaryText}" Foreground="#64748B"
+                                   VerticalAlignment="Center" />
+                        <ComboBox ItemsSource="{Binding Filters}" DisplayMemberPath="Label"
+                                  SelectedItem="{Binding SelectedFilter}" Width="240" HorizontalAlignment="Left"
+                                  Padding="6" />
+                    </DockPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Orders}"
+                              SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
+                              RowStyle="{StaticResource OrderRowStyle}"
+                              AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal" CanUserAddRows="False"
+                              BorderThickness="0" Background="White" RowHeight="34">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{loc:T Proc_ColNumber}" Binding="{Binding OrderNumber}" Width="120" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColCustomer}" Binding="{Binding CustomerName}" Width="*" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColStatus}" Binding="{Binding StatusText}" Width="170" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColExpected}" Binding="{Binding ExpectedText}" Width="100" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColItems}" Binding="{Binding ItemCount}" Width="70" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColFlag}" Binding="{Binding FlagText}" Width="110" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- DROITE : changement de statut et historique de la commande selectionnee -->
+            <Border Grid.Row="1" Grid.Column="1" Padding="16" Background="White" CornerRadius="10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="{loc:T Proc_Selected}" FontWeight="Bold" Foreground="#08A6B5" />
+
+                        <TextBlock Margin="0,6,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#12365D">
+                            <Run Text="{Binding SelectedOrder.OrderNumber, Mode=OneWay}" />
+                            <Run Text=" · " />
+                            <Run Text="{Binding SelectedOrder.StatusText, Mode=OneWay}" />
+                        </TextBlock>
+
+                        <StackPanel IsEnabled="{Binding IsOrderSelected}"
+                                    Visibility="{Binding CanChangeStatus, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="{loc:T Proc_NewStatus}" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding NextStatuses}" DisplayMemberPath="Label"
+                                      SelectedItem="{Binding SelectedNextStatus}" Padding="6" />
+
+                            <TextBlock Text="{loc:T Proc_NoTransition}" Foreground="#64748B" TextWrapping="Wrap"
+                                       Margin="0,6,0,0"
+                                       Visibility="{Binding HasNoTransition, Converter={StaticResource BoolToVisibility}}" />
+
+                            <CheckBox Content="{loc:T Proc_Correction}" IsChecked="{Binding IsCorrectionMode, Mode=TwoWay}"
+                                      Margin="0,10,0,0" Foreground="#12365D"
+                                      Visibility="{Binding CanCorrect, Converter={StaticResource BoolToVisibility}}" />
+
+                            <TextBlock Text="{loc:T Proc_Comment}" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding CommentText, UpdateSourceTrigger=PropertyChanged}" Padding="6"
+                                     TextWrapping="Wrap" AcceptsReturn="False" />
+
+                            <Button Content="{loc:T Proc_Apply}" Command="{Binding ApplyStatusCommand}"
+                                    Style="{StaticResource PrimaryButton}" />
+                        </StackPanel>
+
+                        <Separator Margin="0,20" />
+
+                        <TextBlock Text="{loc:T Proc_History}" FontWeight="Bold" Foreground="#08A6B5" />
+
+                        <DataGrid ItemsSource="{Binding History}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  CanUserAddRows="False" BorderThickness="0" Background="White" RowHeight="30"
+                                  Height="230" Margin="0,8,0,0"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{loc:T Proc_HistDate}"
+                                                    Binding="{Binding ChangedAtLocal, StringFormat='dd/MM HH:mm'}" Width="90" />
+                                <DataGridTextColumn Header="{loc:T Proc_HistFrom}" Binding="{Binding FromText}" Width="110" />
+                                <DataGridTextColumn Header="{loc:T Proc_HistTo}" Binding="{Binding ToText}" Width="110" />
+                                <DataGridTextColumn Header="{loc:T Proc_HistBy}" Binding="{Binding UserText}" Width="120" />
+                                <DataGridTextColumn Header="{loc:T Proc_HistCorrection}" Binding="{Binding CorrectionText}" Width="90" />
+                                <DataGridTextColumn Header="{loc:T Proc_HistComment}" Binding="{Binding Comment}" Width="200" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding Message}" Margin="0,12,0,0"
+                       TextWrapping="Wrap" FontSize="14">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="#1E8449" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                <Setter Property="Foreground" Value="#C0392B" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -46,6 +46,12 @@ public partial class App : Application
             services.AddTransient<ReportsView>();
             services.AddTransient<UserManagementViewModel>();
             services.AddTransient<UserManagementView>();
+            services.AddTransient<OrderProcessingViewModel>();
+            services.AddTransient<OrderProcessingView>();
+            services.AddTransient<ServiceCatalogViewModel>();
+            services.AddTransient<ServiceCatalogView>();
+            services.AddTransient<StockViewModel>();
+            services.AddTransient<StockView>();
             services.AddTransient<MainWindow>();
             services.AddTransient<DashboardWindow>();
 

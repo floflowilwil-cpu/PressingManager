@@ -53,3 +53,20 @@ Les annulations (`OrderCancelled`) et les corrections de statut (`OrderStatusCor
 ## Limites connues
 
 - L'historique de statut commence au premier changement ; il n'est pas reconstitue pour les commandes creees avant.
+
+## Ecrans WPF (menu lateral)
+
+Trois onglets, meme modele que Paiements et Utilisateurs (MVVM, textes FR/EN dans `Localization/Strings.cs`, prefixes `Proc_`, `Svc_`, `Stock_`) :
+
+| Onglet | Vue / ViewModel | Visible avec la permission | Contenu |
+|---|---|---|---|
+| Traitement | `OrderProcessingView` / `OrderProcessingViewModel` | `ViewOrders` | File de traitement filtrable (a traiter, en retard, un statut), commandes en retard en rouge et pretes en vert, changement de statut avec commentaire, correction autorisee (si `CorrectOrderStatus`), confirmation avant annulation, historique des statuts |
+| Services et tarifs | `ServiceCatalogView` / `ServiceCatalogViewModel` | `ManageServices` | Catalogue, creation / modification / (de)sactivation, nouveau tarif (l'ancien est cloture), historique des tarifs |
+| Stocks | `StockView` / `StockViewModel` | `ViewStock` (ecriture : `ManageStock`) | Produits et stock disponible, alertes de seuil (lignes rouges, filtre), creation / modification de produit, entrees, sorties, ajustements, historique des mouvements |
+
+Les boutons sont masques selon les droits par confort ; le vrai controle reste dans les services. Les erreurs metier et refus de permission sont affiches dans l'ecran (jamais d'exception non geree). Les ViewModels partagent `ModuleViewModelBase` (message, utilisateur connecte, execution protegee) et `DecimalInput` (saisie `1 500,5` ou `1500.5`).
+
+## Limites connues (complement)
+
+- Dans l'historique des statuts et des mouvements, le nom n'est affiche que pour l'utilisateur connecte ; les autres apparaissent comme « Utilisateur n°X » (la liste des comptes demande `ManageUsers`).
+- L'affectation d'une commande a un employe n'est pas implementee : elle demande une nouvelle colonne en base (migration), a decider avec la personne chargee de l'integration. En attendant, chaque changement de statut conserve l'utilisateur qui l'a fait.
