@@ -3,6 +3,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Data;
 using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
 
@@ -30,6 +31,13 @@ namespace PressingManager.App
             {
                 await _viewModel.InitializeAsync();
             };
+        }
+
+        // ACTUALISATION DU SOUS-TITRE
+        private void RefreshSubtitle()
+        {
+            txtSubtitle.GetBindingExpression(TextBlock.TextProperty)
+                ?.UpdateTarget();
         }
 
         // CONNEXION REUSSIE
@@ -171,6 +179,9 @@ namespace PressingManager.App
         // LANGUE FRANCAISE
         private void BtnFrench_Click(object sender, RoutedEventArgs e)
         {
+            _viewModel.IsEnglish = false;
+            RefreshSubtitle();
+
             txtWelcome.Text = "Bienvenue !";
             txtUsernameLabel.Text = "Nom d'utilisateur";
             txtPasswordLabel.Text = "Mot de passe";
@@ -191,6 +202,9 @@ namespace PressingManager.App
         // LANGUE ANGLAISE
         private void BtnEnglish_Click(object sender, RoutedEventArgs e)
         {
+            _viewModel.IsEnglish = true;
+            RefreshSubtitle();
+
             txtWelcome.Text = "Welcome!";
             txtUsernameLabel.Text = "Username";
             txtPasswordLabel.Text = "Password";
