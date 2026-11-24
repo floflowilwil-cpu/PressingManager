@@ -83,6 +83,63 @@ public sealed class ReportService : IReportService
         return ReportCalculator.GetAwaitingPickup(rows);
     }
 
+    public async Task<IReadOnlyList<TrendPoint>> GetTrendAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken = default)
+    {
+        _session.Require(Permission.ViewReports);
+        ValidateRange(fromUtc, toUtc);
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var payments = await db.Payments
+            .AsNoTracking()
+            .Where(p => p.Status == PaymentStatus.Valid && p.PaidAt >= fromUtc && p.PaidAt < toUtc)
+            .Select(p => new { p.PaidAt, p.Amount })
+            .ToListAsync(cancellationToken);
+
+        var expenses = await db.Expenses
+            .AsNoTracking()
+            .Where(e => !e.IsCancelled && e.Date >= fromUtc && e.Date < toUtc)
+            .Select(e => new { e.Date, e.Amount })
+            .ToListAsync(cancellationToken);
+
+        return ReportCalculator.BuildTrend(
+            payments.Select(p => (p.PaidAt, p.Amount)),
+            expenses.Select(e => (e.Date, e.Amount)),
+            fromUtc,
+            toUtc,
+            TimeZoneInfo.Local);
+    }
+
+    public async Task<IReadOnlyList<ServiceShare>> GetServiceBreakdownAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken = default)
+    {
+        _session.Require(Permission.ViewReports);
+        ValidateRange(fromUtc, toUtc);
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var orders = await db.Orders
+            .AsNoTracking()
+            .Include(o => o.Items)
+            .Where(o => o.CreatedAt >= fromUtc && o.CreatedAt < toUtc && o.Status != OrderStatus.Cancelled)
+            .ToListAsync(cancellationToken);
+
+        var names = await db.Services
+            .AsNoTracking()
+            .ToDictionaryAsync(s => s.Id, s => s.Name, cancellationToken);
+
+        return orders
+            .SelectMany(o => o.Items)
+            .GroupBy(i => i.ServiceId)
+            .Select(g => new ServiceShare(
+                names.GetValueOrDefault(g.Key) ?? "Autres",
+                g.Sum(i => i.LineTotal)))
+            .Where(s => s.Amount > 0)
+            .OrderByDescending(s => s.Amount)
+            .ToList();
+    }
+
     private static void ValidateRange(DateTime fromUtc, DateTime toUtc)
     {
         if (toUtc < fromUtc)

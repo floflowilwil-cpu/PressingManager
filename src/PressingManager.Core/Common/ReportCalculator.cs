@@ -1,3 +1,4 @@
+using System.Globalization;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
 
@@ -47,4 +48,50 @@ public static class ReportCalculator
             TotalExpenses: totalExpenses,
             OutstandingBalance: active.Where(o => o.Balance > 0).Sum(o => o.Balance));
     }
+
+    /// <summary>
+    /// Regroupe encaissements et depenses (dates UTC) par jour local si la periode fait 31 jours au plus,
+    /// sinon par mois local. [fromUtc, toUtc[ est semi-ouvert ; chaque jour / mois est present, meme a zero.
+    /// </summary>
+    public static IReadOnlyList<TrendPoint> BuildTrend(
+        IEnumerable<(DateTime Date, decimal Amount)> payments,
+        IEnumerable<(DateTime Date, decimal Amount)> expenses,
+        DateTime fromUtc,
+        DateTime toUtc,
+        TimeZoneInfo timeZone)
+    {
+        var first = ToLocal(fromUtc, timeZone).Date;
+        var last = ToLocal(toUtc.AddTicks(-1), timeZone).Date;
+        if (last < first)
+        {
+            last = first;
+        }
+
+        var daily = (last - first).TotalDays < 31;
+        var french = CultureInfo.GetCultureInfo("fr-FR");
+
+        DateTime KeyOf(DateTime local) => daily ? local.Date : new DateTime(local.Year, local.Month, 1);
+
+        var collected = payments
+            .GroupBy(p => KeyOf(ToLocal(p.Date, timeZone)))
+            .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+        var spent = expenses
+            .GroupBy(e => KeyOf(ToLocal(e.Date, timeZone)))
+            .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
+
+        var points = new List<TrendPoint>();
+        for (var key = KeyOf(first); key <= last; key = daily ? key.AddDays(1) : key.AddMonths(1))
+        {
+            var label = daily
+                ? key.ToString("dd/MM", french)
+                : key.ToString("MMM", french);
+
+            points.Add(new TrendPoint(label, collected.GetValueOrDefault(key), spent.GetValueOrDefault(key)));
+        }
+
+        return points;
+    }
+
+    private static DateTime ToLocal(DateTime utc, TimeZoneInfo timeZone) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), timeZone);
 }
