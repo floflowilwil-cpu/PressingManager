@@ -10,13 +10,16 @@ namespace PressingManager.Infrastructure;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Enregistre la base SQLite et les services de l'infrastructure.
+    /// Enregistre la base PostgreSQL (partagee entre tous les postes) et les services de l'infrastructure.
     /// Un IDbContextFactory est utilise (un contexte court par operation), ce qui convient a WPF.
     /// Les autres membres ajoutent leurs services ici, a la suite.
     /// </summary>
-    public static IServiceCollection AddPressingInfrastructure(this IServiceCollection services, string databasePath)
+    public static IServiceCollection AddPressingInfrastructure(this IServiceCollection services, string connectionString)
     {
-        services.AddDbContextFactory<PressingDbContext>(options => options.UseSqlite($"Data Source={databasePath}"));
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+
+        NpgsqlSetup.Configure();
+        services.AddDbContextFactory<PressingDbContext>(options => options.UseNpgsql(connectionString));
 
         // DbContext scoped expose pour les services du module P3 qui en ont besoin
         services.AddScoped<Microsoft.EntityFrameworkCore.DbContext>(sp =>
@@ -43,9 +46,6 @@ public static class DependencyInjection
         services.AddSingleton<IPaymentService, PaymentService>();
         services.AddSingleton<IExpenseService, ExpenseService>();
         services.AddSingleton<ICashService, CashService>();
-        // Module traitement, services, tarifs et stocks (Personne 3)
-        services.AddProcessingAndInventoryServices();
-
         // Module traitement, services, tarifs et stocks (Personne 3)
         services.AddProcessingAndInventoryServices();
 

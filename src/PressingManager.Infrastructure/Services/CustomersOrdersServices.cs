@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Entities;
@@ -80,11 +80,12 @@ public sealed class CustomerService : ICustomerService
         var text = (searchText ?? string.Empty).Trim();
         if (text.Length > 0)
         {
-            var pattern = $"%{EscapeLike(text)}%";
+            // LIKE est insensible a la casse sous SQLite mais sensible sous PostgreSQL : on met les deux cotes en minuscules.
+            var pattern = $"%{EscapeLike(text.ToLower())}%";
             query = query.Where(c =>
-                EF.Functions.Like(c.FullName, pattern, "\\") ||
-                EF.Functions.Like(c.Phone, pattern, "\\") ||
-                EF.Functions.Like(c.CustomerNumber, pattern, "\\"));
+                EF.Functions.Like(c.FullName.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(c.Phone.ToLower(), pattern, "\\") ||
+                EF.Functions.Like(c.CustomerNumber.ToLower(), pattern, "\\"));
         }
 
         var customers = await query

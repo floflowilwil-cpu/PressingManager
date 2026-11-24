@@ -116,6 +116,14 @@ public partial class ReportsViewModel : ObservableObject
 
     public bool IsAccessDenied => !CanViewReports;
 
+    /// <summary>La vue est creee avant la connexion : a rappeler a chaque ouverture de l'onglet pour relire les droits.</summary>
+    public void RefreshPermissions()
+    {
+        OnPropertyChanged(nameof(CanViewReports));
+        OnPropertyChanged(nameof(IsAccessDenied));
+        OnPropertyChanged(nameof(CanExport));
+    }
+
     public bool CanExport => _session.HasPermission(Permission.ExportReports);
 
     [ObservableProperty]

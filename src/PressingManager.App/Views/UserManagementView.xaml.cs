@@ -22,8 +22,11 @@ public partial class UserManagementView : UserControl
     }
 
     /// <summary>Recharge la liste (appele a chaque ouverture de l'onglet ; sans effet sans le droit ManageUsers).</summary>
-    public Task RefreshAsync() =>
-        _viewModel.CanManageUsers ? _viewModel.LoadCommand.ExecuteAsync(null) : Task.CompletedTask;
+    public Task RefreshAsync()
+    {
+        _viewModel.RefreshPermissions();
+        return _viewModel.CanManageUsers ? _viewModel.LoadCommand.ExecuteAsync(null) : Task.CompletedTask;
+    }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
