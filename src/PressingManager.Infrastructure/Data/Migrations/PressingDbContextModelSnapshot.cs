@@ -314,6 +314,8 @@ namespace PressingManager.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ChangedByUserId");
+
                     b.HasIndex("OrderId", "ChangedAt");
 
                     b.ToTable("OrderStatusHistory", (string)null);
@@ -487,6 +489,8 @@ namespace PressingManager.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.HasIndex("ProductId", "MovementDate");
 
                     b.ToTable("StockMovements", (string)null);
@@ -585,6 +589,21 @@ namespace PressingManager.Infrastructure.Data.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("PressingManager.Core.Entities.OrderStatusHistory", b =>
+                {
+                    b.HasOne("PressingManager.Core.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PressingManager.Core.Entities.Order", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PressingManager.Core.Entities.Payment", b =>
                 {
                     b.HasOne("PressingManager.Core.Entities.CashSession", "CashSession")
@@ -611,6 +630,12 @@ namespace PressingManager.Infrastructure.Data.Migrations
                     b.HasOne("PressingManager.Core.Entities.Product", "Product")
                         .WithMany("StockMovements")
                         .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PressingManager.Core.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

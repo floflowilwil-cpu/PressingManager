@@ -39,6 +39,8 @@ public partial class App : Application
             services.AddTransient<PaymentManagementView>();
             services.AddTransient<ReportsViewModel>();
             services.AddTransient<ReportsView>();
+            services.AddTransient<UserManagementViewModel>();
+            services.AddTransient<UserManagementView>();
             services.AddTransient<MainWindow>();
             services.AddTransient<DashboardWindow>();
 

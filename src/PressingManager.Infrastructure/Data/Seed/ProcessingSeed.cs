@@ -6,17 +6,17 @@ namespace PressingManager.Infrastructure.Data.Seed;
 
 /// <summary>
 /// Donnees de depart du module traitement / stocks (catalogue et produits).
-/// Les tarifs sont des EXEMPLES a ajuster avec le gerant. Idempotent : ne fait rien
-/// si des services ou des produits existent deja.
+/// Les tarifs sont des EXEMPLES a ajuster avec le gerant. Idempotent : ne cree les services
+/// (ou les produits) que si la table correspondante est vide.
 /// </summary>
 public static class ProcessingSeed
 {
-    public static async Task SeedAsync(DbContext db, TimeProvider? clock = null, CancellationToken cancellationToken = default)
+    public static void Seed(DbContext db, TimeProvider? clock = null)
     {
         ArgumentNullException.ThrowIfNull(db);
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
 
-        if (!await db.Set<Service>().AnyAsync(cancellationToken))
+        if (!db.Set<Service>().Any())
         {
             db.Set<Service>().AddRange(
                 NewService("Lavage", "Lavage et séchage du linge", BillingUnit.Kilogram, 500m, now),
@@ -24,7 +24,7 @@ public static class ProcessingSeed
                 NewService("Nettoyage à sec", "Nettoyage à sec des vêtements délicats", BillingUnit.Piece, 1500m, now));
         }
 
-        if (!await db.Set<Product>().AnyAsync(cancellationToken))
+        if (!db.Set<Product>().Any())
         {
             db.Set<Product>().AddRange(
                 new Product { Name = "Détergent", Unit = "kg", AlertThreshold = 5m },
@@ -33,7 +33,7 @@ public static class ProcessingSeed
                 new Product { Name = "Sachets de livraison", Unit = "unité", AlertThreshold = 100m });
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        db.SaveChanges();
     }
 
     private static Service NewService(string name, string description, BillingUnit unit, decimal amount, DateTime validFrom)
