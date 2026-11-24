@@ -6,32 +6,36 @@ using System.Windows.Media;
 using System.Windows.Data;
 using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
+using PressingManager.App.Services;
 
 namespace PressingManager.App
 {
     public partial class MainWindow : Window
     {
+        private readonly LanguageService _languageService;
         private readonly LoginViewModel _viewModel;
         private readonly DashboardWindow _dashboardWindow;
 
-        public MainWindow(
-            LoginViewModel viewModel,
-            DashboardWindow dashboardWindow)
-        {
-            InitializeComponent();
+       public MainWindow(
+    LoginViewModel viewModel,
+    DashboardWindow dashboardWindow,
+    LanguageService languageService)
+{
+    InitializeComponent();
 
-            _viewModel = viewModel;
-            _dashboardWindow = dashboardWindow;
+    _viewModel = viewModel;
+    _dashboardWindow = dashboardWindow;
+    _languageService = languageService;
 
-            DataContext = _viewModel;
+    DataContext = _viewModel;
 
-            _viewModel.LoginSucceeded += OnLoginSucceeded;
+    _viewModel.LoginSucceeded += OnLoginSucceeded;
 
-            Loaded += async (_, _) =>
-            {
-                await _viewModel.InitializeAsync();
-            };
-        }
+    Loaded += async (_, _) =>
+    {
+        await _viewModel.InitializeAsync();
+    };
+}
 
         // ACTUALISATION DU SOUS-TITRE
         private void RefreshSubtitle()
@@ -176,50 +180,54 @@ namespace PressingManager.App
             }
         }
 
-        // LANGUE FRANCAISE
-        private void BtnFrench_Click(object sender, RoutedEventArgs e)
-        {
-            _viewModel.IsEnglish = false;
-            RefreshSubtitle();
+        // LANGUE FRANCAISE// LANGUE FRANCAISE
+private void BtnFrench_Click(object sender, RoutedEventArgs e)
+{
+    _languageService.SetLanguage(false);
 
-            txtWelcome.Text = "Bienvenue !";
-            txtUsernameLabel.Text = "Nom d'utilisateur";
-            txtPasswordLabel.Text = "Mot de passe";
-            chkRemember.Content = "Se souvenir de moi";
-            txtForgotPassword.Text = "Mot de passe oublié ?";
+    _viewModel.IsEnglish = false;
+    RefreshSubtitle();
 
-            btnFrench.Background =
-                new SolidColorBrush(Color.FromRgb(8, 100, 217));
+    txtWelcome.Text = "Bienvenue !";
+    txtUsernameLabel.Text = "Nom d'utilisateur";
+    txtPasswordLabel.Text = "Mot de passe";
+    chkRemember.Content = "Se souvenir de moi";
+    txtForgotPassword.Text = "Mot de passe oublié ?";
 
-            btnFrench.Foreground = Brushes.White;
+    btnFrench.Background =
+        new SolidColorBrush(Color.FromRgb(8, 100, 217));
 
-            btnEnglish.Background = Brushes.Transparent;
+    btnFrench.Foreground = Brushes.White;
 
-            btnEnglish.Foreground =
-                new SolidColorBrush(Color.FromRgb(23, 74, 145));
-        }
+    btnEnglish.Background = Brushes.Transparent;
 
-        // LANGUE ANGLAISE
-        private void BtnEnglish_Click(object sender, RoutedEventArgs e)
-        {
-            _viewModel.IsEnglish = true;
-            RefreshSubtitle();
+    btnEnglish.Foreground =
+        new SolidColorBrush(Color.FromRgb(23, 74, 145));
+}
 
-            txtWelcome.Text = "Welcome!";
-            txtUsernameLabel.Text = "Username";
-            txtPasswordLabel.Text = "Password";
-            chkRemember.Content = "Remember me";
-            txtForgotPassword.Text = "Forgot password?";
+// LANGUE ANGLAISE
+private void BtnEnglish_Click(object sender, RoutedEventArgs e)
+{
+    _languageService.SetLanguage(true);
 
-            btnEnglish.Background =
-                new SolidColorBrush(Color.FromRgb(8, 100, 217));
+    _viewModel.IsEnglish = true;
+    RefreshSubtitle();
 
-            btnEnglish.Foreground = Brushes.White;
+    txtWelcome.Text = "Welcome!";
+    txtUsernameLabel.Text = "Username";
+    txtPasswordLabel.Text = "Password";
+    chkRemember.Content = "Remember me";
+    txtForgotPassword.Text = "Forgot password?";
 
-            btnFrench.Background = Brushes.Transparent;
+    btnEnglish.Background =
+        new SolidColorBrush(Color.FromRgb(8, 100, 217));
 
-            btnFrench.Foreground =
-                new SolidColorBrush(Color.FromRgb(23, 74, 145));
-        }
+    btnEnglish.Foreground = Brushes.White;
+
+    btnFrench.Background = Brushes.Transparent;
+
+    btnFrench.Foreground =
+        new SolidColorBrush(Color.FromRgb(23, 74, 145));
+}
     }
 }

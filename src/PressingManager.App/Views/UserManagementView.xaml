@@ -1,3 +1,4 @@
+
 <UserControl x:Class="PressingManager.App.Views.UserManagementView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,6 +8,7 @@
             <Setter Property="Margin" Value="0,10,0,4" />
             <Setter Property="Foreground" Value="#0F2A4A" />
         </Style>
+
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Padding" Value="12,8" />
             <Setter Property="Margin" Value="0,12,0,0" />
@@ -21,60 +23,141 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="320" />
         </Grid.ColumnDefinitions>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.ColumnSpan="2" Text="Utilisateurs" FontSize="22" FontWeight="Bold" Foreground="#0F2A4A" Margin="0,0,0,16" />
+        <TextBlock Grid.ColumnSpan="2"
+                   Text="Utilisateurs"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   Foreground="#0F2A4A"
+                   Margin="0,0,0,16" />
 
-        <DataGrid Grid.Row="1" Grid.Column="0" Margin="0,0,16,0"
-                  ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
-                  AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
-                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" CanUserAddRows="False">
+        <DataGrid Grid.Row="1"
+                  Grid.Column="0"
+                  Margin="0,0,16,0"
+                  ItemsSource="{Binding Users}"
+                  SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  CanUserAddRows="False">
+
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Nom" Binding="{Binding FullName}" Width="*" />
                 <DataGridTextColumn Header="Utilisateur" Binding="{Binding Username}" Width="130" />
                 <DataGridTextColumn Header="Rôle" Binding="{Binding RoleLabel}" Width="150" />
                 <DataGridCheckBoxColumn Header="Actif" Binding="{Binding IsActive, Mode=OneWay}" Width="60" />
-                <DataGridTextColumn Header="Dernière connexion" Binding="{Binding LastLoginLocal, StringFormat='dd/MM/yyyy HH:mm'}" Width="150" />
+                <DataGridTextColumn Header="Dernière connexion"
+                                    Binding="{Binding LastLoginLocal, StringFormat='dd/MM/yyyy HH:mm'}"
+                                    Width="150" />
             </DataGrid.Columns>
         </DataGrid>
 
-        <Border Grid.Row="1" Grid.Column="1" Padding="16" Background="White" CornerRadius="8">
+        <Border Grid.Row="1"
+                Grid.Column="1"
+                Padding="16"
+                Background="White"
+                CornerRadius="8">
+
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <TextBlock Text="Nouveau compte" FontWeight="Bold" Foreground="#14B8A6" />
+                    <TextBlock Text="Nouveau compte"
+                               FontWeight="Bold"
+                               Foreground="#14B8A6" />
 
                     <TextBlock Text="Nom complet" Style="{StaticResource FieldLabel}" />
-                    <TextBox Text="{Binding NewFullName, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                    <TextBox Text="{Binding NewFullName, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="6" />
 
                     <TextBlock Text="Nom d'utilisateur" Style="{StaticResource FieldLabel}" />
-                    <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                    <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="6" />
 
                     <TextBlock Text="Mot de passe" Style="{StaticResource FieldLabel}" />
-                    <PasswordBox x:Name="NewPasswordBox" Padding="6" PasswordChanged="NewPasswordBox_PasswordChanged" />
+                    <PasswordBox x:Name="NewPasswordBox"
+                                 Padding="6"
+                                 PasswordChanged="NewPasswordBox_PasswordChanged" />
 
                     <TextBlock Text="Rôle" Style="{StaticResource FieldLabel}" />
-                    <ComboBox ItemsSource="{Binding Roles}" DisplayMemberPath="Label" SelectedValuePath="Value"
-                              SelectedValue="{Binding NewRole}" Padding="6" />
+                    <ComboBox ItemsSource="{Binding Roles}"
+                              DisplayMemberPath="Label"
+                              SelectedValuePath="Value"
+                              SelectedValue="{Binding NewRole}"
+                              Padding="6" />
 
-                    <Button Content="Créer le compte" Command="{Binding CreateCommand}" Style="{StaticResource PrimaryButton}" />
+                    <Button Content="Créer le compte"
+                            Command="{Binding CreateCommand}"
+                            Style="{StaticResource PrimaryButton}" />
 
                     <Separator Margin="0,20" />
 
-                    <TextBlock Text="Compte sélectionné" FontWeight="Bold" Foreground="#14B8A6" />
-                    <Button Content="Activer / désactiver" Command="{Binding ToggleActiveCommand}" Style="{StaticResource PrimaryButton}" />
+                    <TextBlock Text="Compte sélectionné"
+                               FontWeight="Bold"
+                               Foreground="#14B8A6" />
 
-                    <TextBlock Text="Nouveau mot de passe" Style="{StaticResource FieldLabel}" />
-                    <PasswordBox x:Name="ResetPasswordBox" Padding="6" PasswordChanged="ResetPasswordBox_PasswordChanged" />
-                    <Button Content="Réinitialiser le mot de passe" Command="{Binding ResetPasswordCommand}" Style="{StaticResource PrimaryButton}" />
+                    <Button Content="Activer / désactiver"
+                            Command="{Binding ToggleActiveCommand}"
+                            Style="{StaticResource PrimaryButton}" />
+
+                    <TextBlock Text="Nouveau mot de passe"
+                               Style="{StaticResource FieldLabel}" />
+
+                    <PasswordBox x:Name="ResetPasswordBox"
+                                 Padding="6"
+                                 PasswordChanged="ResetPasswordBox_PasswordChanged" />
+
+                    <Button Content="Réinitialiser le mot de passe"
+                            Command="{Binding ResetPasswordCommand}"
+                            Style="{StaticResource PrimaryButton}" />
+
+                    <Separator Margin="0,20" />
+
+                    <TextBlock Text="Récupération du compte"
+                               FontWeight="Bold"
+                               Foreground="#14B8A6" />
+
+                    <TextBlock Text="Générez un code à communiquer à l'utilisateur sélectionné."
+                               TextWrapping="Wrap"
+                               Foreground="#64748B"
+                               Margin="0,8,0,0" />
+
+                    <Button Content="Générer un code de récupération"
+                            Command="{Binding GenerateRecoveryCodeCommand}"
+                            Style="{StaticResource PrimaryButton}" />
+
+                    <TextBlock Text="Code de récupération généré :"
+                               Style="{StaticResource FieldLabel}" />
+
+                    <TextBox Text="{Binding RecoveryCode}"
+                             IsReadOnly="True"
+                             TextWrapping="Wrap"
+                             Padding="8"
+                             FontWeight="Bold"
+                             Foreground="#0F2A4A"
+                             Background="#EAF2FF" />
+
+                    <TextBlock Text="Attention : ce code ne sera plus affiché après avoir sélectionné un autre utilisateur."
+                               TextWrapping="Wrap"
+                               FontSize="11"
+                               Foreground="#C0392B"
+                               Margin="0,8,0,0" />
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
-        <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding Message}" Margin="0,12,0,0" TextWrapping="Wrap">
+        <TextBlock Grid.Row="2"
+                   Grid.ColumnSpan="2"
+                   Text="{Binding Message}"
+                   Margin="0,12,0,0"
+                   TextWrapping="Wrap">
+
             <TextBlock.Style>
                 <Style TargetType="TextBlock">
                     <Setter Property="Foreground" Value="#1E8449" />

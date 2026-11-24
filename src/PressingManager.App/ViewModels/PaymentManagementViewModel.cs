@@ -1,7 +1,9 @@
+
 using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PressingManager.App.Services;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
@@ -34,28 +36,32 @@ public partial class PaymentManagementViewModel : ObservableObject
     private readonly IExpenseService _expenses;
     private readonly IOrderBillingInfoProvider _orderBilling;
     private readonly ICurrentUserContext _session;
+    private readonly LanguageService _languageService;
 
     public PaymentManagementViewModel(
         IPaymentService payments,
         ICashService cash,
         IExpenseService expenses,
         IOrderBillingInfoProvider orderBilling,
-        ICurrentUserContext session)
+        ICurrentUserContext session,
+        LanguageService languageService)
     {
         _payments = payments ?? throw new ArgumentNullException(nameof(payments));
         _cash = cash ?? throw new ArgumentNullException(nameof(cash));
         _expenses = expenses ?? throw new ArgumentNullException(nameof(expenses));
         _orderBilling = orderBilling ?? throw new ArgumentNullException(nameof(orderBilling));
         _session = session ?? throw new ArgumentNullException(nameof(session));
+        _languageService = languageService ?? throw new ArgumentNullException(nameof(languageService));
     }
 
     public ObservableCollection<PaymentHistoryItem> OrderPayments { get; } = new();
 
     public ObservableCollection<ExpenseDto> RecentExpenses { get; } = new();
 
-    public IReadOnlyList<PaymentMethodOption> ExpenseMethods { get; } = Enum.GetValues<PaymentMethod>()
-        .Select(m => new PaymentMethodOption(m, PaymentReceiptGenerator.GetMethodLabel(m)))
-        .ToList();
+    public IReadOnlyList<PaymentMethodOption> ExpenseMethods =>
+        Enum.GetValues<PaymentMethod>()
+            .Select(m => new PaymentMethodOption(m, GetMethodLabel(m)))
+            .ToList();
 
     [ObservableProperty]
     private string _orderIdText = string.Empty;
@@ -150,17 +156,52 @@ public partial class PaymentManagementViewModel : ObservableObject
     public bool IsCashSessionOpen => CurrentCashSession is { Status: CashSessionStatus.Open };
 
     public string CashStatusLabel => IsCashSessionOpen
-        ? $"Caisse ouverte (#{CurrentCashSession!.Id}) • Fonds initial : {CurrentCashSession.OpeningAmount:N2}"
-        : "Caisse fermée — ouvrez une session pour encaisser en espèces";
+        ? Translate(
+            $"Caisse ouverte (#{CurrentCashSession!.Id}) • Fonds initial : {CurrentCashSession.OpeningAmount:N2}",
+            $"Cash register open (#{CurrentCashSession!.Id}) • Opening balance: {CurrentCashSession.OpeningAmount:N2}")
+        : Translate(
+            "Caisse fermée — ouvrez une session pour encaisser en espèces",
+            "Cash register closed — open a session to accept cash payments");
 
     public bool HasLatestReceipt => LatestReceipt is not null;
 
     public string LatestReceiptSummary => LatestReceipt is null
         ? string.Empty
-        : $"{LatestReceipt.ReceiptNumber} • {LatestReceipt.AmountPaid:N2} via {LatestReceipt.MethodLabel}";
+        : $"{LatestReceipt.ReceiptNumber} • {LatestReceipt.AmountPaid:N2} via {TranslateMethodLabel(LatestReceipt.MethodLabel)}";
 
-    /// <summary>Declenche l'ouverture de la fenetre de confirmation et d'impression du recu.</summary>
     public event EventHandler<PaymentReceiptDto>? ReceiptReady;
+
+    // Actualise les propriétés dépendantes de la langue sélectionnée.
+    public void RefreshLanguage()
+    {
+        OnPropertyChanged(nameof(CashStatusLabel));
+        OnPropertyChanged(nameof(LatestReceiptSummary));
+        OnPropertyChanged(nameof(ExpenseMethods));
+
+        // Actualisation des libellés de l'historique sans perdre les paiements.
+        var payments = OrderPayments.ToList();
+        OrderPayments.Clear();
+
+        foreach (var payment in payments)
+        {
+            OrderPayments.Add(payment with
+            {
+                MethodLabel = GetMethodLabel(payment.Method),
+                StatusLabel = GetStatusLabel(payment.Status)
+            });
+        }
+
+        if (SelectedPayment is not null)
+        {
+            SelectedPayment = OrderPayments.FirstOrDefault(
+                p => p.Id == SelectedPayment.Id);
+        }
+
+        if (!string.IsNullOrWhiteSpace(Message))
+        {
+            Message = TranslateKnownMessage(Message);
+        }
+    }
 
     [RelayCommand]
     private void SelectMethod(PaymentMethod method) => SelectedMethod = method;
@@ -177,10 +218,13 @@ public partial class PaymentManagementViewModel : ObservableObject
     {
         if (!int.TryParse(OrderIdText.Trim(), out var orderId) || orderId <= 0)
         {
-            throw new InvalidOperationException("Saisissez un identifiant de commande valide (nombre positif).");
+            throw new InvalidOperationException(Translate(
+                "Saisissez un identifiant de commande valide (nombre positif).",
+                "Enter a valid order ID (positive number)."));
         }
 
         await RefreshOrderAsync(orderId);
+
         PaymentAmountText = RemainingBalance > 0m
             ? RemainingBalance.ToString("0.##", CultureInfo.CurrentCulture)
             : string.Empty;
@@ -190,7 +234,7 @@ public partial class PaymentManagementViewModel : ObservableObject
     private Task RegisterPaymentAsync() => RunAsync(async () =>
     {
         var orderId = RequireLoadedOrderId();
-        var amount = ParsePositiveAmount(PaymentAmountText, "montant du paiement");
+        var amount = ParsePositiveAmount(PaymentAmountText, "montant du paiement", "payment amount");
         var userId = _session.CurrentUser?.Id ?? 0;
 
         var created = await _payments.RegisterAsync(new RegisterPaymentDto(
@@ -216,9 +260,7 @@ public partial class PaymentManagementViewModel : ObservableObject
     private void OpenLatestReceipt()
     {
         if (LatestReceipt is not null)
-        {
             ReceiptReady?.Invoke(this, LatestReceipt);
-        }
     }
 
     [RelayCommand]
@@ -227,14 +269,18 @@ public partial class PaymentManagementViewModel : ObservableObject
         if (SelectedPayment is null)
         {
             IsError = true;
-            Message = "Sélectionnez un paiement valide dans l'historique.";
+            Message = Translate(
+                "Sélectionnez un paiement valide dans l'historique.",
+                "Select a valid payment from the history.");
             return;
         }
 
         if (!SelectedPayment.IsValid)
         {
             IsError = true;
-            Message = "Un reçu officiel ne peut être généré que pour un paiement validé.";
+            Message = Translate(
+                "Un reçu officiel ne peut être généré que pour un paiement validé.",
+                "An official receipt can only be generated for a validated payment.");
             return;
         }
 
@@ -282,20 +328,28 @@ public partial class PaymentManagementViewModel : ObservableObject
     [RelayCommand]
     private Task OpenCashSessionAsync() => RunAsync(async () =>
     {
-        var openingAmount = ParseNonNegativeAmount(OpeningAmountText, "fonds d'ouverture");
+        var openingAmount = ParseNonNegativeAmount(
+            OpeningAmountText, "fonds d'ouverture", "opening balance");
+
         var userId = _session.CurrentUser?.Id ?? 0;
-        CurrentCashSession = await _cash.OpenAsync(new OpenCashSessionDto(openingAmount, userId));
+        CurrentCashSession = await _cash.OpenAsync(
+            new OpenCashSessionDto(openingAmount, userId));
     }, "Session de caisse ouverte.");
 
     [RelayCommand]
     private Task CloseCashSessionAsync() => RunAsync(async () =>
     {
-        if (CurrentCashSession is null || CurrentCashSession.Status != CashSessionStatus.Open)
+        if (CurrentCashSession is null ||
+            CurrentCashSession.Status != CashSessionStatus.Open)
         {
-            throw new InvalidOperationException("Aucune session de caisse ouverte à clôturer.");
+            throw new InvalidOperationException(Translate(
+                "Aucune session de caisse ouverte à clôturer.",
+                "There is no open cash register session to close."));
         }
 
-        var counted = ParseNonNegativeAmount(CountedAmountText, "montant compté");
+        var counted = ParseNonNegativeAmount(
+            CountedAmountText, "montant compté", "counted amount");
+
         var userId = _session.CurrentUser?.Id ?? 0;
 
         var closed = await _cash.CloseAsync(new CloseCashSessionDto(
@@ -307,13 +361,18 @@ public partial class PaymentManagementViewModel : ObservableObject
         CurrentCashSession = null;
         CountedAmountText = string.Empty;
         CloseComment = string.Empty;
-        Message = $"Caisse clôturée — Attendu : {closed.ExpectedAmount:N2}, Écart : {closed.Discrepancy:N2}.";
+
+        Message = Translate(
+            $"Caisse clôturée — Attendu : {closed.ExpectedAmount:N2}, Écart : {closed.Discrepancy:N2}.",
+            $"Cash register closed — Expected: {closed.ExpectedAmount:N2}, Difference: {closed.Discrepancy:N2}.");
     }, successMessage: null);
 
     [RelayCommand]
     private Task CreateExpenseAsync() => RunAsync(async () =>
     {
-        var amount = ParsePositiveAmount(ExpenseAmountText, "montant de la dépense");
+        var amount = ParsePositiveAmount(
+            ExpenseAmountText, "montant de la dépense", "expense amount");
+
         var userId = _session.CurrentUser?.Id ?? 0;
 
         await _expenses.CreateAsync(new CreateExpenseDto(
@@ -327,6 +386,7 @@ public partial class PaymentManagementViewModel : ObservableObject
         ExpenseCategory = string.Empty;
         ExpenseAmountText = string.Empty;
         ExpenseComment = string.Empty;
+
         await RefreshExpensesAsync();
     }, "Dépense enregistrée.");
 
@@ -337,6 +397,7 @@ public partial class PaymentManagementViewModel : ObservableObject
             .Sum(p => p.Amount);
 
         var cashierName = _session.CurrentUser?.FullName ?? "Caissier";
+
         return PaymentReceiptGenerator.BuildReceipt(
             payment,
             OrderNumber,
@@ -349,19 +410,29 @@ public partial class PaymentManagementViewModel : ObservableObject
     private async Task RefreshOrderAsync(int orderId)
     {
         var order = await _orderBilling.GetOrderBillingInfoAsync(orderId)
-            ?? throw new InvalidOperationException($"Commande #{orderId} introuvable.");
+            ?? throw new InvalidOperationException(
+                Translate(
+                    $"Commande #{orderId} introuvable.",
+                    $"Order #{orderId} was not found."));
 
         var payments = await _payments.GetByOrderAsync(orderId);
         var balance = await _payments.GetBalanceAsync(orderId);
 
         LoadedOrderId = order.OrderId;
-        OrderNumber = string.IsNullOrWhiteSpace(order.OrderNumber) ? $"CMD-{order.OrderId:D4}" : order.OrderNumber;
-        CustomerName = string.IsNullOrWhiteSpace(order.CustomerName) ? "Client" : order.CustomerName;
+        OrderNumber = string.IsNullOrWhiteSpace(order.OrderNumber)
+            ? $"CMD-{order.OrderId:D4}"
+            : order.OrderNumber;
+
+        CustomerName = string.IsNullOrWhiteSpace(order.CustomerName)
+            ? Translate("Client", "Customer")
+            : order.CustomerName;
+
         OrderTotal = order.TotalAmount;
         RemainingBalance = balance;
         IsOrderLoaded = true;
 
         OrderPayments.Clear();
+
         foreach (var p in payments)
         {
             OrderPayments.Add(new PaymentHistoryItem(
@@ -371,10 +442,10 @@ public partial class PaymentManagementViewModel : ObservableObject
                 p.PaidAt,
                 p.PaidAt.ToLocalTime(),
                 p.Method,
-                PaymentReceiptGenerator.GetMethodLabel(p.Method),
+                GetMethodLabel(p.Method),
                 p.Reference,
                 p.Status,
-                PaymentReceiptGenerator.GetStatusLabel(p.Status),
+                GetStatusLabel(p.Status),
                 p.CancelReason));
         }
     }
@@ -383,36 +454,58 @@ public partial class PaymentManagementViewModel : ObservableObject
     {
         var now = DateTime.UtcNow;
         var list = await _expenses.SearchAsync(now.AddDays(-30), now.AddDays(1));
+
         RecentExpenses.Clear();
-        foreach (var e in list)
-        {
-            RecentExpenses.Add(e);
-        }
+
+        foreach (var expense in list)
+            RecentExpenses.Add(expense);
     }
 
     private int RequireLoadedOrderId() =>
-        LoadedOrderId ?? throw new InvalidOperationException("Chargez d'abord une commande avant d'enregistrer un paiement.");
+        LoadedOrderId ?? throw new InvalidOperationException(
+            Translate(
+                "Chargez d'abord une commande avant d'enregistrer un paiement.",
+                "Load an order before registering a payment."));
 
     private PaymentHistoryItem RequireSelectedPayment() =>
-        SelectedPayment ?? throw new InvalidOperationException("Sélectionnez d'abord un paiement dans la liste.");
+        SelectedPayment ?? throw new InvalidOperationException(
+            Translate(
+                "Sélectionnez d'abord un paiement dans la liste.",
+                "Select a payment from the list first."));
 
-    private static decimal ParsePositiveAmount(string text, string fieldName)
+    private decimal ParsePositiveAmount(
+        string text,
+        string frenchFieldName,
+        string englishFieldName)
     {
-        var value = ParseNonNegativeAmount(text, fieldName);
+        var value = ParseNonNegativeAmount(text, frenchFieldName, englishFieldName);
+
         if (value <= 0m)
         {
-            throw new InvalidOperationException($"Le {fieldName} doit être strictement supérieur à zéro.");
+            throw new InvalidOperationException(Translate(
+                $"Le {frenchFieldName} doit être strictement supérieur à zéro.",
+                $"The {englishFieldName} must be greater than zero."));
         }
 
         return value;
     }
 
-    private static decimal ParseNonNegativeAmount(string text, string fieldName)
+    private decimal ParseNonNegativeAmount(
+        string text,
+        string frenchFieldName,
+        string englishFieldName)
     {
         var normalized = (text ?? string.Empty).Trim().Replace(',', '.');
-        if (!decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var value) || value < 0m)
+
+        if (!decimal.TryParse(
+                normalized,
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out var value) || value < 0m)
         {
-            throw new InvalidOperationException($"Saisissez un {fieldName} valide.");
+            throw new InvalidOperationException(Translate(
+                $"Saisissez un {frenchFieldName} valide.",
+                $"Enter a valid {englishFieldName}."));
         }
 
         return value;
@@ -421,28 +514,91 @@ public partial class PaymentManagementViewModel : ObservableObject
     private async Task RunAsync(Func<Task> action, string? successMessage)
     {
         if (IsBusy)
-        {
             return;
-        }
 
         IsBusy = true;
+
         try
         {
             await action();
+
             IsError = false;
+
             if (successMessage is not null)
-            {
-                Message = successMessage;
-            }
+                Message = TranslateKnownMessage(successMessage);
         }
-        catch (Exception ex) when (ex is BusinessRuleException or PermissionDeniedException or InvalidOperationException)
+        catch (Exception ex) when (
+            ex is BusinessRuleException or
+            PermissionDeniedException or
+            InvalidOperationException)
         {
             IsError = true;
-            Message = ex.Message;
+            Message = TranslateKnownMessage(ex.Message);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private string GetMethodLabel(PaymentMethod method)
+    {
+        return method switch
+        {
+            PaymentMethod.Cash => Translate("Espèces", "Cash"),
+            PaymentMethod.MtnMobileMoney => "MTN Mobile Money",
+            PaymentMethod.OrangeMoney => "Orange Money",
+            PaymentMethod.Other => Translate("Autre", "Other"),
+            _ => method.ToString()
+        };
+    }
+
+    private string GetStatusLabel(PaymentStatus status)
+    {
+        var label = PaymentReceiptGenerator.GetStatusLabel(status);
+        return TranslateKnownMessage(label);
+    }
+
+    private string TranslateMethodLabel(string label)
+    {
+        return label switch
+        {
+            "Espèces" => Translate("Espèces", "Cash"),
+            "Autre" => Translate("Autre", "Other"),
+            _ => label
+        };
+    }
+
+    private string TranslateKnownMessage(string message)
+    {
+        return message switch
+        {
+            "Paiement validé et reçu généré avec succès." =>
+                Translate("Paiement validé et reçu généré avec succès.",
+                    "Payment validated and receipt generated successfully."),
+
+            "Paiement annulé." =>
+                Translate("Paiement annulé.", "Payment cancelled."),
+
+            "Paiement remboursé." =>
+                Translate("Paiement remboursé.", "Payment refunded."),
+
+            "Session de caisse ouverte." =>
+                Translate("Session de caisse ouverte.", "Cash register session opened."),
+
+            "Dépense enregistrée." =>
+                Translate("Dépense enregistrée.", "Expense saved."),
+
+            "Valide" => Translate("Valide", "Valid"),
+            "Annulé" => Translate("Annulé", "Cancelled"),
+            "Remboursé" => Translate("Remboursé", "Refunded"),
+
+            _ => message
+        };
+    }
+
+    private string Translate(string french, string english)
+    {
+        return _languageService.IsEnglish ? english : french;
     }
 }

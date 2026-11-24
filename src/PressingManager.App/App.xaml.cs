@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using PressingManager.App.Services;
 using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
 using PressingManager.Infrastructure;
@@ -34,6 +35,10 @@ public partial class App : Application
             var services = new ServiceCollection();
 
             services.AddPressingInfrastructure(databasePath);
+
+            // Service de langue partagé dans toute l'application
+            services.AddSingleton<LanguageService>();
+
             services.AddTransient<LoginViewModel>();
             services.AddTransient<PaymentManagementViewModel>();
             services.AddTransient<PaymentManagementView>();
@@ -44,7 +49,9 @@ public partial class App : Application
 
             _serviceProvider = services.BuildServiceProvider();
 
-            using (var db = _serviceProvider.GetRequiredService<IDbContextFactory<PressingDbContext>>().CreateDbContext())
+            using (var db = _serviceProvider
+                .GetRequiredService<IDbContextFactory<PressingDbContext>>()
+                .CreateDbContext())
             {
                 db.Database.Migrate();
             }

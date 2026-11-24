@@ -1,3 +1,4 @@
+
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -44,10 +45,19 @@ public partial class UserManagementViewModel : ObservableObject
     private string _resetPasswordValue = string.Empty;
 
     [ObservableProperty]
+    private string? _recoveryCode;
+
+    [ObservableProperty]
     private string? _message;
 
     [ObservableProperty]
     private bool _isError;
+
+    partial void OnSelectedUserChanged(UserDto? value)
+    {
+        RecoveryCode = null;
+        Message = null;
+    }
 
     [RelayCommand]
     private Task LoadAsync() => RunAsync(RefreshAsync, successMessage: null);
@@ -78,6 +88,13 @@ public partial class UserManagementViewModel : ObservableObject
         await _users.ResetPasswordAsync(user.Id, ResetPasswordValue);
         ResetPasswordValue = string.Empty;
     }, "Mot de passe réinitialisé.");
+
+    [RelayCommand]
+    private Task GenerateRecoveryCodeAsync() => RunAsync(async () =>
+    {
+        var user = RequireSelection();
+        RecoveryCode = await _users.GenerateRecoveryCodeAsync(user.Id);
+    }, "Code de récupération généré. Communiquez-le à l'utilisateur.");
 
     private UserDto RequireSelection() =>
         SelectedUser ?? throw new BusinessRuleException("Sélectionnez d'abord un utilisateur dans la liste.");
