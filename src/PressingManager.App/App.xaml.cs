@@ -9,6 +9,7 @@ using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
 using PressingManager.Infrastructure;
 using PressingManager.Infrastructure.Data;
+using PressingManager.Infrastructure.Data.Seed;
 
 namespace PressingManager.App;
 
@@ -53,6 +54,11 @@ public partial class App : Application
             using (var db = _serviceProvider.GetRequiredService<IDbContextFactory<PressingDbContext>>().CreateDbContext())
             {
                 db.Database.Migrate();
+
+#if DEBUG
+                // Donnees d'exemple (services, tarifs, produits) pour tester ; tarifs a ajuster avec le gerant.
+                ProcessingSeed.Seed(db);
+#endif
             }
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();

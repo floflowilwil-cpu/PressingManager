@@ -72,9 +72,14 @@ public sealed class ProcessingTestDb : IDbContextFactory<PressingDbContext>, IDi
 
         if (itemQuantity > 0)
         {
+            // La ligne doit referencer un vrai service (cle etrangere).
+            var service = new Service { Name = $"Service test {number}" };
+            db.Services.Add(service);
+            db.SaveChanges();
+
             order.Items.Add(new OrderItem
             {
-                ServiceId = 1,
+                ServiceId = service.Id,
                 ItemType = "Chemise",
                 Quantity = itemQuantity,
                 UnitPrice = 500m
