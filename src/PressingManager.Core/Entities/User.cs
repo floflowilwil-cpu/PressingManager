@@ -33,4 +33,7 @@ public class User
 
     /// <summary>Le compte est verrouille jusqu'a cette date (UTC) ; null = non verrouille.</summary>
     public DateTime? LockedUntil { get; set; }
+
+    /// <summary>Hash du code de récupération (mot de passe oublié). Null = aucun code actif. Jamais le code en clair.</summary>
+    public string? RecoveryCodeHash { get; set; }
 }

@@ -369,6 +369,10 @@ namespace PressingManager.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("RecoveryCodeHash")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER");
 
