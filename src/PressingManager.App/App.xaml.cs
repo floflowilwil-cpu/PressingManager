@@ -55,6 +55,12 @@ public partial class App : Application
             services.AddTransient<ReportsView>();
             services.AddTransient<UserManagementViewModel>();
             services.AddTransient<UserManagementView>();
+            services.AddTransient<OrderProcessingViewModel>();
+            services.AddTransient<OrderProcessingView>();
+            services.AddTransient<ServiceCatalogViewModel>();
+            services.AddTransient<ServiceCatalogView>();
+            services.AddTransient<StockViewModel>();
+            services.AddTransient<StockView>();
             services.AddTransient<MainWindow>();
             services.AddTransient<DashboardWindow>();
 
@@ -70,6 +76,12 @@ public partial class App : Application
                 {
                     UserSeed.Seed(db, _serviceProvider.GetRequiredService<IPasswordHasher>());
                 }
+
+#if DEBUG
+                // Catalogue de services et produits d'exemple pour tester (idempotent : ne cree que si les tables sont vides).
+                // Les tarifs sont a ajuster avec le gerant.
+                ProcessingSeed.Seed(db);
+#endif
             }
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();

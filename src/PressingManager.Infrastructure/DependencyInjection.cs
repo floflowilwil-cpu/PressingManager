@@ -43,6 +43,9 @@ public static class DependencyInjection
         services.AddSingleton<IExpenseService, ExpenseService>();
         services.AddSingleton<ICashService, CashService>();
 
+        // Module traitement, services, tarifs et stocks (Personne 3)
+        services.AddProcessingAndInventoryServices();
+
         return services;
     }
 }
