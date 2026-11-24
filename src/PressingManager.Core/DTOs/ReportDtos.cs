@@ -24,3 +24,10 @@ public sealed record FinancialSummary(
 {
     public decimal NetResult => TotalCollected - TotalExpenses;
 }
+
+
+/// <summary>Un point du graphique d'evolution : encaissements et depenses d'un jour ou d'un mois.</summary>
+public sealed record TrendPoint(string Label, decimal Collected, decimal Expenses);
+
+/// <summary>Part d'un service (nettoyage, repassage...) dans le chiffre d'affaires facture de la periode.</summary>
+public sealed record ServiceShare(string ServiceName, decimal Amount);

@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.IO;
 using System.Windows;
@@ -37,6 +37,8 @@ public partial class App : Application
             services.AddTransient<LoginViewModel>();
             services.AddTransient<PaymentManagementViewModel>();
             services.AddTransient<PaymentManagementView>();
+            services.AddTransient<ReportsViewModel>();
+            services.AddTransient<ReportsView>();
             services.AddTransient<MainWindow>();
             services.AddTransient<DashboardWindow>();
 
