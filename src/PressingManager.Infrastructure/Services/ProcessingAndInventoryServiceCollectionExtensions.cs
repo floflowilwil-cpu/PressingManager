@@ -7,14 +7,14 @@ public static class ProcessingAndInventoryServiceCollectionExtensions
 {
     /// <summary>
     /// Enregistre les services du module traitement / services / tarifs / stocks.
-    /// Prerequis : un DbContext doit etre enregistre (ex. services.AddScoped&lt;DbContext&gt;(sp =>
-    /// sp.GetRequiredService&lt;PressingDbContext&gt;())).
+    /// A appeler depuis AddPressingInfrastructure, apres l'enregistrement de IDbContextFactory,
+    /// IAuditService et TimeProvider (comme les autres modules : services en singleton).
     /// </summary>
     public static IServiceCollection AddProcessingAndInventoryServices(this IServiceCollection services)
     {
-        services.AddScoped<IServiceCatalogService, ServiceCatalogService>();
-        services.AddScoped<IStockService, StockService>();
-        services.AddScoped<IOrderProcessingService, OrderProcessingService>();
+        services.AddSingleton<IServiceCatalogService, ServiceCatalogService>();
+        services.AddSingleton<IStockService, StockService>();
+        services.AddSingleton<IOrderProcessingService, OrderProcessingService>();
         return services;
     }
 }
