@@ -8,7 +8,6 @@ using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
 using PressingManager.Core.Common;
 using PressingManager.Core.Enums;
-using PressingManager.Core.Exceptions;
 using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.Views;
