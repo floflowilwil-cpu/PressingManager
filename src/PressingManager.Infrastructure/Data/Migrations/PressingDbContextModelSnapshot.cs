@@ -284,6 +284,41 @@ namespace PressingManager.Infrastructure.Data.Migrations
                     b.ToTable("OrderItems", (string)null);
                 });
 
+            modelBuilder.Entity("PressingManager.Core.Entities.OrderStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ChangedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("FromStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsCorrection")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ToStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId", "ChangedAt");
+
+                    b.ToTable("OrderStatusHistory", (string)null);
+                });
+
             modelBuilder.Entity("PressingManager.Core.Entities.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -336,6 +371,125 @@ namespace PressingManager.Infrastructure.Data.Migrations
                     b.HasIndex("Reference");
 
                     b.ToTable("Payments", (string)null);
+                });
+
+            modelBuilder.Entity("PressingManager.Core.Entities.Product", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("AlertThreshold")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Products", (string)null);
+                });
+
+            modelBuilder.Entity("PressingManager.Core.Entities.Service", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Services", (string)null);
+                });
+
+            modelBuilder.Entity("PressingManager.Core.Entities.ServicePrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Unit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceId", "Unit", "ValidFrom");
+
+                    b.ToTable("ServicePrices", (string)null);
+                });
+
+            modelBuilder.Entity("PressingManager.Core.Entities.StockMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("MovementDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId", "MovementDate");
+
+                    b.ToTable("StockMovements", (string)null);
                 });
 
             modelBuilder.Entity("PressingManager.Core.Entities.User", b =>
@@ -441,6 +595,28 @@ namespace PressingManager.Infrastructure.Data.Migrations
                     b.Navigation("CashSession");
                 });
 
+            modelBuilder.Entity("PressingManager.Core.Entities.ServicePrice", b =>
+                {
+                    b.HasOne("PressingManager.Core.Entities.Service", "Service")
+                        .WithMany("Prices")
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Service");
+                });
+
+            modelBuilder.Entity("PressingManager.Core.Entities.StockMovement", b =>
+                {
+                    b.HasOne("PressingManager.Core.Entities.Product", "Product")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("PressingManager.Core.Entities.CashSession", b =>
                 {
                     b.Navigation("Expenses");
@@ -456,6 +632,16 @@ namespace PressingManager.Infrastructure.Data.Migrations
             modelBuilder.Entity("PressingManager.Core.Entities.Order", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("PressingManager.Core.Entities.Product", b =>
+                {
+                    b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("PressingManager.Core.Entities.Service", b =>
+                {
+                    b.Navigation("Prices");
                 });
 #pragma warning restore 612, 618
         }
