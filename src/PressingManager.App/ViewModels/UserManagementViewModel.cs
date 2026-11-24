@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PressingManager.App.Localization;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
@@ -10,23 +11,50 @@ namespace PressingManager.App.ViewModels;
 
 public sealed record RoleOption(UserRole Value, string Label);
 
+/// <summary>Une ligne du tableau des utilisateurs (role traduit selon la langue courante).</summary>
+public sealed record UserRow(UserDto Source)
+{
+    public int Id => Source.Id;
+
+    public string FullName => Source.FullName;
+
+    public string Username => Source.Username;
+
+    public string RoleText => Loc.Instance.Role(Source.Role);
+
+    public bool IsActive => Source.IsActive;
+
+    public DateTime? LastLoginLocal => Source.LastLoginLocal;
+}
+
+/// <summary>Onglet Utilisateurs (reserve a l'administrateur : permission ManageUsers).</summary>
 public partial class UserManagementViewModel : ObservableObject
 {
     private readonly IUserService _users;
+    private readonly ICurrentUserContext _session;
 
-    public UserManagementViewModel(IUserService users)
+    private IReadOnlyList<UserDto> _all = Array.Empty<UserDto>();
+
+    public UserManagementViewModel(IUserService users, ICurrentUserContext session)
     {
         _users = users;
+        _session = session;
+        _roles = BuildRoles();
+
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
     }
 
-    public ObservableCollection<UserDto> Users { get; } = new();
+    public ObservableCollection<UserRow> Users { get; } = new();
 
-    public IReadOnlyList<RoleOption> Roles { get; } = Enum.GetValues<UserRole>()
-        .Select(role => new RoleOption(role, UserRoleLabels.ToFrench(role)))
-        .ToList();
+    public bool CanManageUsers => _session.HasPermission(Permission.ManageUsers);
+
+    public bool IsAccessDenied => !CanManageUsers;
 
     [ObservableProperty]
-    private UserDto? _selectedUser;
+    private IReadOnlyList<RoleOption> _roles;
+
+    [ObservableProperty]
+    private UserRow? _selectedUser;
 
     [ObservableProperty]
     private string _newFullName = string.Empty;
@@ -50,7 +78,7 @@ public partial class UserManagementViewModel : ObservableObject
     private bool _isError;
 
     [RelayCommand]
-    private Task LoadAsync() => RunAsync(RefreshAsync, successMessage: null);
+    private Task LoadAsync() => RunAsync(RefreshAsync, successKey: null);
 
     [RelayCommand]
     private Task CreateAsync() => RunAsync(async () =>
@@ -61,7 +89,7 @@ public partial class UserManagementViewModel : ObservableObject
         NewUsername = string.Empty;
         NewPassword = string.Empty;
         await RefreshAsync();
-    }, "Compte créé.");
+    }, "Users_Created");
 
     [RelayCommand]
     private Task ToggleActiveAsync() => RunAsync(async () =>
@@ -69,7 +97,7 @@ public partial class UserManagementViewModel : ObservableObject
         var user = RequireSelection();
         await _users.SetActiveAsync(user.Id, !user.IsActive);
         await RefreshAsync(user.Id);
-    }, "Statut du compte mis à jour.");
+    }, "Users_StatusUpdated");
 
     [RelayCommand]
     private Task ResetPasswordAsync() => RunAsync(async () =>
@@ -77,33 +105,67 @@ public partial class UserManagementViewModel : ObservableObject
         var user = RequireSelection();
         await _users.ResetPasswordAsync(user.Id, ResetPasswordValue);
         ResetPasswordValue = string.Empty;
-    }, "Mot de passe réinitialisé.");
+    }, "Users_PasswordReset");
 
-    private UserDto RequireSelection() =>
-        SelectedUser ?? throw new BusinessRuleException("Sélectionnez d'abord un utilisateur dans la liste.");
+    /// <summary>Le code n'est retourne qu'une fois par le service : on l'affiche ici, il ne sera pas conserve.</summary>
+    [RelayCommand]
+    private Task GenerateRecoveryCodeAsync() => RunAsync(async () =>
+    {
+        var user = RequireSelection();
+        var code = await _users.GenerateRecoveryCodeAsync(user.Id);
+
+        Message = Loc.Instance.Format("Users_RecoveryShown", user.FullName, code);
+        IsError = false;
+    }, successKey: null, keepMessage: true);
+
+    private UserRow RequireSelection() =>
+        SelectedUser ?? throw new BusinessRuleException(Loc.Instance["Users_SelectFirst"]);
 
     private async Task RefreshAsync() => await RefreshAsync(SelectedUser?.Id);
 
     private async Task RefreshAsync(int? keepSelectionId)
     {
-        var all = await _users.GetAllAsync();
+        _all = await _users.GetAllAsync();
+        RebuildRows(keepSelectionId);
+    }
 
+    private void RebuildRows(int? keepSelectionId)
+    {
         Users.Clear();
-        foreach (var user in all)
+        foreach (var user in _all)
         {
-            Users.Add(user);
+            Users.Add(new UserRow(user));
         }
 
         SelectedUser = Users.FirstOrDefault(u => u.Id == keepSelectionId);
     }
 
-    private async Task RunAsync(Func<Task> action, string? successMessage)
+    private static List<RoleOption> BuildRoles() =>
+        Enum.GetValues<UserRole>().Select(role => new RoleOption(role, Loc.Instance.Role(role))).ToList();
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
     {
+        Roles = BuildRoles();
+        OnPropertyChanged(nameof(NewRole)); // le ComboBox re-selectionne le role en cours
+        RebuildRows(SelectedUser?.Id);
+    }
+
+    private async Task RunAsync(Func<Task> action, string? successKey, bool keepMessage = false)
+    {
+        if (!keepMessage)
+        {
+            Message = null;
+        }
+
         try
         {
             await action();
-            IsError = false;
-            Message = successMessage;
+
+            if (successKey is not null)
+            {
+                IsError = false;
+                Message = Loc.Instance[successKey];
+            }
         }
         catch (Exception ex) when (ex is BusinessRuleException or PermissionDeniedException)
         {

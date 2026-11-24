@@ -38,18 +38,17 @@ public partial class DashboardWindow : Window
         StatisticsContentHost.Content = _reportsView;
         UsersContentHost.Content = _userManagementView;
 
-        // Confort visuel : le vrai controle d'acces est dans les services.
+        // La fenetre est creee avant la connexion : on lit les droits au moment ou elle s'affiche.
+        // Confort visuel seulement : le vrai controle d'acces est fait dans les services.
         Loaded += (_, _) =>
         {
-            BtnStatistics.Visibility = session.HasPermission(Permission.ViewReports)
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
-            BtnUsers.Visibility = session.HasPermission(Permission.ManageUsers)
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+            BtnStatistics.Visibility = VisibleIf(session, Permission.ViewReports);
+            BtnUsers.Visibility = VisibleIf(session, Permission.ManageUsers);
         };
     }
+
+    private static Visibility VisibleIf(ICurrentUserContext session, Permission permission) =>
+        session.HasPermission(permission) ? Visibility.Visible : Visibility.Collapsed;
 
     private void BtnDashboard_Click(object sender, RoutedEventArgs e) =>
         SwitchSection(Section.Home);
@@ -70,8 +69,11 @@ public partial class DashboardWindow : Window
         await _reportsView.RefreshAsync();
     }
 
-    private void BtnUsers_Click(object sender, RoutedEventArgs e) =>
+    private async void BtnUsers_Click(object sender, RoutedEventArgs e)
+    {
         SwitchSection(Section.Users);
+        await _userManagementView.RefreshAsync();
+    }
 
     /// <summary>Seule la zone blanche change : le menu lateral reste toujours affiche.</summary>
     private void SwitchSection(Section section)

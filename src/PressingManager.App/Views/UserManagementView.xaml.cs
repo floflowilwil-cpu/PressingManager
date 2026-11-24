@@ -19,9 +19,11 @@ public partial class UserManagementView : UserControl
 
         // Vide les PasswordBox quand le ViewModel remet les valeurs a zero.
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
-
-        Loaded += async (_, _) => await viewModel.LoadCommand.ExecuteAsync(null);
     }
+
+    /// <summary>Recharge la liste (appele a chaque ouverture de l'onglet ; sans effet sans le droit ManageUsers).</summary>
+    public Task RefreshAsync() =>
+        _viewModel.CanManageUsers ? _viewModel.LoadCommand.ExecuteAsync(null) : Task.CompletedTask;
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

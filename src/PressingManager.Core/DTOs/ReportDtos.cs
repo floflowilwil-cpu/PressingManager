@@ -26,8 +26,12 @@ public sealed record FinancialSummary(
 }
 
 
-/// <summary>Un point du graphique d'evolution : encaissements et depenses d'un jour ou d'un mois.</summary>
-public sealed record TrendPoint(string Label, decimal Collected, decimal Expenses);
+/// <summary>
+/// Un point du graphique d'evolution : encaissements et depenses d'un jour ou d'un mois.
+/// <paramref name="Period"/> est le jour (ou le 1er du mois si <paramref name="IsMonthly"/>) en heure locale ;
+/// l'ecran en fait le libelle dans la langue courante.
+/// </summary>
+public sealed record TrendPoint(DateTime Period, bool IsMonthly, decimal Collected, decimal Expenses);
 
 /// <summary>Part d'un service (nettoyage, repassage...) dans le chiffre d'affaires facture de la periode.</summary>
 public sealed record ServiceShare(string ServiceName, decimal Amount);
