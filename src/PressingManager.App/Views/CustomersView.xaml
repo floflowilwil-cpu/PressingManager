@@ -1,0 +1,98 @@
+<UserControl x:Class="PressingManager.App.Views.CustomersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F3F6FB">
+
+    <Grid Margin="32">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Clients" FontSize="28" FontWeight="Bold"
+                   Foreground="#12365D" Margin="0,0,0,18"/>
+
+        <!-- BARRE D'OUTILS -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
+            <Button Content="+  Nouveau client"
+                    Style="{StaticResource PmPrimaryButton}"
+                    Click="BtnNew_Click"
+                    Margin="0,0,14,0"
+                    Visibility="{Binding CanManage, Converter={StaticResource PmBoolToVisibility}}"/>
+
+            <TextBox Width="380"
+                     Tag="Rechercher un client (nom, téléphone, n°)..."
+                     Style="{StaticResource PmSearchBox}"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+
+        <!-- MESSAGE -->
+        <Border Grid.Row="2" Style="{StaticResource PmMessageBar}">
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" Foreground="#1E293B"/>
+        </Border>
+
+        <!-- TABLEAU -->
+        <Border Grid.Row="3" Style="{StaticResource PmCard}">
+            <Grid>
+                <DataGrid ItemsSource="{Binding PageItems}"
+                          Style="{StaticResource PmGrid}"
+                          MouseDoubleClick="Grid_MouseDoubleClick"
+                          x:Name="CustomersGrid">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding CustomerNumber}" Width="110"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTextColumn Header="Nom complet" Binding="{Binding FullName}" Width="2*"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTextColumn Header="Téléphone" Binding="{Binding Phone}" Width="160"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTextColumn Header="Adresse" Binding="{Binding Address}" Width="2*"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTemplateColumn Header="Actions" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="&#xE7B3;" ToolTip="Voir la fiche et l'historique"
+                                                Style="{StaticResource PmIconButton}"
+                                                Click="BtnView_Click"/>
+                                        <Button Content="&#xE70F;" ToolTip="Modifier"
+                                                Style="{StaticResource PmIconButton}"
+                                                Click="BtnEdit_Click"
+                                                Visibility="{Binding DataContext.CanManage, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource PmBoolToVisibility}}"/>
+                                        <Button Content="&#xE74D;" ToolTip="Désactiver"
+                                                Style="{StaticResource PmIconButton}"
+                                                Foreground="#DC2626"
+                                                Click="BtnDeactivate_Click"
+                                                Visibility="{Binding DataContext.CanManage, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource PmBoolToVisibility}}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- ETAT VIDE -->
+                <TextBlock Text="Aucun client trouvé."
+                           Foreground="#94A3B8" FontSize="14"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="{Binding IsEmpty, Converter={StaticResource PmBoolToVisibility}}"/>
+            </Grid>
+        </Border>
+
+        <!-- PAGINATION -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="&#xE76B;" FontFamily="Segoe MDL2 Assets"
+                    Style="{StaticResource PmPageButton}"
+                    Command="{Binding PreviousPageCommand}"
+                    IsEnabled="{Binding HasPrevious}"/>
+            <TextBlock Text="{Binding PageInfo}" VerticalAlignment="Center" Foreground="#475569"
+                       FontSize="13" Margin="8,0"/>
+            <Button Content="&#xE76C;" FontFamily="Segoe MDL2 Assets"
+                    Style="{StaticResource PmPageButton}"
+                    Command="{Binding NextPageCommand}"
+                    IsEnabled="{Binding HasNext}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -116,5 +116,11 @@ namespace PressingManager.Core.Interfaces
         Task<IReadOnlyList<OrderDetailsDto>> GetByCustomerAsync(
             int customerId,
             CancellationToken cancellationToken = default);
+
+        // Ajout (intégration UI) : liste des commandes pour l'onglet « Commandes ».
+        // Recherche par numéro de commande ou nom du client ; vide = les plus récentes.
+        Task<IReadOnlyList<OrderDetailsDto>> SearchAsync(
+            string searchText,
+            CancellationToken cancellationToken = default);
     }
 }

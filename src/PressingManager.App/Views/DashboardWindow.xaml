@@ -124,11 +124,15 @@
                             Style="{StaticResource ActiveSidebarButton}"
                             Click="BtnDashboard_Click"/>
 
-                    <Button Content="Clients"
-                            Style="{StaticResource SidebarButton}"/>
+                    <Button x:Name="BtnCustomers"
+                            Content="Clients"
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnCustomers_Click"/>
 
-                    <Button Content="Commandes"
-                            Style="{StaticResource SidebarButton}"/>
+                    <Button x:Name="BtnOrders"
+                            Content="Commandes"
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnOrders_Click"/>
 
                     <Button Content="Vêtements"
                             Style="{StaticResource SidebarButton}"/>
@@ -287,6 +291,12 @@
             </Border>
 
         </Grid>
+
+        <!-- MODULE CLIENTS (Personne 2) -->
+        <ContentControl x:Name="CustomersContentHost" Grid.Column="1" Visibility="Collapsed"/>
+
+        <!-- MODULE COMMANDES (Personne 2) -->
+        <ContentControl x:Name="OrdersContentHost" Grid.Column="1" Visibility="Collapsed"/>
 
         <!-- MODULE PAIEMENTS, CAISSE ET DEPENSES (Personne 4) -->
         <ContentControl x:Name="PaymentsContentHost" Grid.Column="1" Visibility="Collapsed"/>

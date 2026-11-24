@@ -398,6 +398,40 @@ public sealed class OrderService : IOrderService
         return orders.Select(o => CustomersOrdersMapping.ToOrderDto(o)).ToList();
     }
 
+    public async Task<IReadOnlyList<OrderDetailsDto>> SearchAsync(
+        string searchText, CancellationToken cancellationToken = default)
+    {
+        _session.Require(Permission.ViewOrders);
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var query = db.Orders.AsNoTracking()
+            .Include(o => o.Customer)
+            .Include(o => o.Items)
+            .AsQueryable();
+
+        var text = (searchText ?? string.Empty).Trim();
+        if (text.Length > 0)
+        {
+            var pattern = $"%{EscapeLike(text)}%";
+            query = query.Where(o =>
+                EF.Functions.Like(o.OrderNumber, pattern, "\\") ||
+                (o.Customer != null && EF.Functions.Like(o.Customer.FullName, pattern, "\\")));
+        }
+
+        var orders = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(MaxSearchResults)
+            .ToListAsync(cancellationToken);
+
+        return orders.Select(o => CustomersOrdersMapping.ToOrderDto(o)).ToList();
+    }
+
+    private const int MaxSearchResults = 200;
+
+    private static string EscapeLike(string text) =>
+        text.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+
     private static decimal Round(decimal value) =>
         Math.Round(value, 2, MidpointRounding.AwayFromZero);
 }

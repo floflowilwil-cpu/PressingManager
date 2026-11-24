@@ -1,0 +1,99 @@
+<Window x:Class="PressingManager.App.Views.CustomerDetailsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Fiche client"
+        Width="620"
+        Height="560"
+        MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+
+    <Grid Margin="28,24,28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="{Binding Customer.FullName}" FontSize="22" FontWeight="Bold" Foreground="#12365D"/>
+            <TextBlock Foreground="#64748B" FontSize="12" Margin="0,4,0,0">
+                <Run Text="{Binding Customer.CustomerNumber, Mode=OneWay}"/>
+                <Run Text="  •  client depuis le "/>
+                <Run Text="{Binding CreatedText, Mode=OneWay}"/>
+            </TextBlock>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource PmCard}" Padding="18" Margin="0,18,0,18" Background="#F8FAFC">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Téléphone" Foreground="#64748B" FontSize="12" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Customer.Phone}" Foreground="#1E293B" FontSize="13" Margin="0,0,0,8"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Adresse" Foreground="#64748B" FontSize="12" Margin="0,0,0,8"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AddressText}" Foreground="#1E293B" FontSize="13"
+                           TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Notes" Foreground="#64748B" FontSize="12"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding NotesText}" Foreground="#1E293B" FontSize="13"
+                           TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+
+        <!-- HISTORIQUE DES COMMANDES -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Historique des commandes" FontSize="15" FontWeight="SemiBold"
+                       Foreground="#12365D" Margin="0,0,0,10"/>
+
+            <Border Grid.Row="1" Style="{StaticResource PmCard}">
+                <Grid>
+                    <DataGrid ItemsSource="{Binding Orders}" Style="{StaticResource PmGrid}"
+                              Visibility="{Binding HasOrders, Converter={StaticResource PmBoolToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="N° commande" Binding="{Binding Number}" Width="2*"
+                                                ElementStyle="{StaticResource PmCellText}"/>
+                            <DataGridTextColumn Header="Date" Binding="{Binding DateText}" Width="100"
+                                                ElementStyle="{StaticResource PmCellText}"/>
+                            <DataGridTemplateColumn Header="Statut" Width="1.6*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding Background}" CornerRadius="10" Padding="10,3"
+                                                HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding Foreground}"
+                                                       FontSize="11" FontWeight="SemiBold"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Montant" Binding="{Binding AmountText}" Width="1.4*"
+                                                ElementStyle="{StaticResource PmCellText}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Text="Ce client n'a pas encore de commande." Foreground="#94A3B8" FontSize="13"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding HasNoOrders, Converter={StaticResource PmBoolToVisibility}}"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Button Grid.Row="3" Content="Fermer" Style="{StaticResource PmSecondaryButton}" IsCancel="True"
+                HorizontalAlignment="Right" Margin="0,18,0,0"/>
+    </Grid>
+</Window>

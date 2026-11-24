@@ -1,0 +1,98 @@
+<UserControl x:Class="PressingManager.App.Views.OrdersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F3F6FB">
+
+    <Grid Margin="32">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Commandes" FontSize="28" FontWeight="Bold"
+                   Foreground="#12365D" Margin="0,0,0,18"/>
+
+        <!-- BARRE D'OUTILS -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
+            <Button Content="+  Nouvelle commande"
+                    Style="{StaticResource PmPrimaryButton}"
+                    Click="BtnNew_Click"
+                    Margin="0,0,14,0"
+                    Visibility="{Binding CanCreate, Converter={StaticResource PmBoolToVisibility}}"/>
+
+            <TextBox Width="380"
+                     Tag="Rechercher une commande (n° ou client)..."
+                     Style="{StaticResource PmSearchBox}"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+
+        <!-- MESSAGE -->
+        <Border Grid.Row="2" Style="{StaticResource PmMessageBar}">
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="13" Foreground="#1E293B"/>
+        </Border>
+
+        <!-- TABLEAU -->
+        <Border Grid.Row="3" Style="{StaticResource PmCard}">
+            <Grid>
+                <DataGrid ItemsSource="{Binding PageItems}"
+                          Style="{StaticResource PmGrid}"
+                          x:Name="OrdersGrid"
+                          MouseDoubleClick="Grid_MouseDoubleClick">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="N° Commande" Binding="{Binding Number}" Width="1.6*"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTextColumn Header="Client" Binding="{Binding CustomerName}" Width="1.8*"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTextColumn Header="Date" Binding="{Binding DateText}" Width="110"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTemplateColumn Header="Statut" Width="1.5*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding Background}" CornerRadius="10" Padding="10,3"
+                                            HorizontalAlignment="Left">
+                                        <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding Foreground}"
+                                                   FontSize="11" FontWeight="SemiBold"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Montant" Binding="{Binding AmountText}" Width="1.4*"
+                                            ElementStyle="{StaticResource PmCellText}"/>
+                        <DataGridTemplateColumn Header="Actions" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="&#xE7B3;" ToolTip="Voir le détail"
+                                            Style="{StaticResource PmIconButton}"
+                                            Click="BtnView_Click"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- ETAT VIDE -->
+                <TextBlock Text="Aucune commande trouvée."
+                           Foreground="#94A3B8" FontSize="14"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="{Binding IsEmpty, Converter={StaticResource PmBoolToVisibility}}"/>
+            </Grid>
+        </Border>
+
+        <!-- PAGINATION -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="&#xE76B;" FontFamily="Segoe MDL2 Assets"
+                    Style="{StaticResource PmPageButton}"
+                    Command="{Binding PreviousPageCommand}"
+                    IsEnabled="{Binding HasPrevious}"/>
+            <TextBlock Text="{Binding PageInfo}" VerticalAlignment="Center" Foreground="#475569"
+                       FontSize="13" Margin="8,0"/>
+            <Button Content="&#xE76C;" FontFamily="Segoe MDL2 Assets"
+                    Style="{StaticResource PmPageButton}"
+                    Command="{Binding NextPageCommand}"
+                    IsEnabled="{Binding HasNext}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

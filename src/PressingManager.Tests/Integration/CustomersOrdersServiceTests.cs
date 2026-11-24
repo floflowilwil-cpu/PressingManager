@@ -197,6 +197,40 @@ public class CustomersOrdersServiceTests
         Assert.Equal(first.OrderNumber, orders[1].OrderNumber);
     }
 
+    // ---------- LISTE DES COMMANDES (onglet Commandes) ----------
+
+    [Fact]
+    public async Task Order_Search_ListsNewestFirstAndFiltersByNumberOrCustomer()
+    {
+        using var ctx = new CustomersOrdersContext();
+        var awa = await ctx.NewCustomerAsync("Awa Diallo", "0601020304");
+        var moussa = await ctx.NewCustomerAsync("Moussa Ba", "0605060708");
+        var first = await ctx.NewOrderAsync(awa.Id);
+        ctx.Time.Advance(TimeSpan.FromMinutes(5));
+        var second = await ctx.NewOrderAsync(moussa.Id);
+
+        var all = await ctx.Orders.SearchAsync(string.Empty);
+        Assert.Equal(2, all.Count);
+        Assert.Equal(second.OrderNumber, all[0].OrderNumber);
+
+        var byCustomer = await ctx.Orders.SearchAsync("awa");
+        Assert.Single(byCustomer);
+        Assert.Equal(first.OrderNumber, byCustomer[0].OrderNumber);
+
+        var byNumber = await ctx.Orders.SearchAsync(second.OrderNumber);
+        Assert.Single(byNumber);
+        Assert.Equal("Moussa Ba", byNumber[0].CustomerName);
+    }
+
+    [Fact]
+    public async Task Order_Search_RequiresViewOrdersPermission()
+    {
+        using var ctx = new CustomersOrdersContext();
+        ctx.SignInAs(UserRole.StockManager);
+
+        await Assert.ThrowsAsync<PermissionDeniedException>(() => ctx.Orders.SearchAsync(string.Empty));
+    }
+
     // ---------- DROITS ----------
 
     [Fact]
