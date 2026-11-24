@@ -23,15 +23,18 @@ public sealed class ServiceCatalogService : IServiceCatalogService
     private const int DescriptionMaxLength = 500;
 
     private readonly IDbContextFactory<PressingDbContext> _dbFactory;
+    private readonly ICurrentUserContext _session;
     private readonly IAuditService _audit;
     private readonly TimeProvider _time;
 
     public ServiceCatalogService(
         IDbContextFactory<PressingDbContext> dbFactory,
+        ICurrentUserContext session,
         IAuditService audit,
         TimeProvider time)
     {
         _dbFactory = dbFactory;
+        _session = session;
         _audit = audit;
         _time = time;
     }
@@ -72,6 +75,7 @@ public sealed class ServiceCatalogService : IServiceCatalogService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session.Require(Permission.ManageServices);
 
         var name = InputValidation.RequireText(request.Name, "Le nom du service", NameMaxLength);
         var description = InputValidation.OptionalText(request.Description, "La description", DescriptionMaxLength);
@@ -97,6 +101,7 @@ public sealed class ServiceCatalogService : IServiceCatalogService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session.Require(Permission.ManageServices);
 
         var name = InputValidation.RequireText(request.Name, "Le nom du service", NameMaxLength);
         var description = InputValidation.OptionalText(request.Description, "La description", DescriptionMaxLength);
@@ -122,6 +127,8 @@ public sealed class ServiceCatalogService : IServiceCatalogService
         bool isActive,
         CancellationToken cancellationToken = default)
     {
+        _session.Require(Permission.ManageServices);
+
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
         var service = await db.Services
@@ -142,6 +149,7 @@ public sealed class ServiceCatalogService : IServiceCatalogService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session.Require(Permission.ManageServices);
 
         if (request.Amount <= 0)
         {

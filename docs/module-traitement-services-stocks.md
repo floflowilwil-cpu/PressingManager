@@ -30,8 +30,27 @@ Donnees de depart facultatives (services et produits d'exemple, tarifs a ajuster
 - Statuts : le statut de reference est `Order.Status`. Un changement valide met a jour la commande et ajoute un evenement dans `OrderStatusHistory` en une seule sauvegarde. Les transitions sont controlees par `OrderStatusRules` ; un retour en arriere autorise est marque `IsCorrection`.
 - Cles etrangeres : `OrderStatusHistory.OrderId` vers `Orders`, `OrderStatusHistory.ChangedByUserId` et `StockMovement.UserId` vers `Users`.
 
+## Permissions (controlees dans les services, via `ICurrentUserContext.Require`)
+
+| Service | Operation | Permission |
+|---|---|---|
+| `ServiceCatalogService` | creer, modifier, (de)sactiver un service, definir un tarif | `ManageServices` |
+| `ServiceCatalogService` | lire services et tarifs | aucune (ouvert : la creation de commande en a besoin) |
+| `StockService` | creer/modifier un produit, enregistrer un mouvement | `ManageStock` |
+| `StockService` | lire produits, mouvements, alertes | `ViewStock` (le tableau de bord attrape le refus : liste d'alertes vide) |
+| `OrderProcessingService` | changer un statut | `UpdateOrderStatus` |
+| `OrderProcessingService` | correction (retour en arriere) | `UpdateOrderStatus` + `CorrectOrderStatus` |
+| `OrderProcessingService` | historique, file de traitement, retards | `ViewOrders` |
+
+Les services recoivent `ICurrentUserContext` par le constructeur (pas de valeur par defaut : un oubli de branchement ne desactive pas les controles).
+Les annulations (`OrderCancelled`) et les corrections de statut (`OrderStatusCorrected`) sont ecrites dans `AuditLogs`.
+
+## File de traitement
+
+- `GetOrdersAsync()` : commandes encore a traiter (ni livrees ni annulees) ; `GetOrdersAsync(statut)` : un statut precis (ex. `ReadyForPickup`). Tri : date prevue la plus proche d'abord.
+- `GetOverdueOrdersAsync()` : commandes dont le jour prevu est passe alors qu'elles ne sont pas encore pretes (`OrderStatusRules.IsOverdue`). Une commande prete a recuperer est signalee a part (`IsReadyForPickup`).
+
 ## Limites connues
 
-- Controle des permissions : pas encore applique dans ces trois services (a faire avec `ICurrentUserContext.Require`).
 - L'historique de statut commence au premier changement ; il n'est pas reconstitue pour les commandes creees avant.
 - `OrderItem.ServiceId` n'a pas de cle etrangere vers `Services` (a convenir avec la personne 2).

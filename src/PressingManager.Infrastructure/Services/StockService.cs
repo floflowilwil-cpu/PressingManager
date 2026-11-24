@@ -20,11 +20,16 @@ public sealed class StockService : IStockService
     private const int ReasonMaxLength = 250;
 
     private readonly IDbContextFactory<PressingDbContext> _dbFactory;
+    private readonly ICurrentUserContext _session;
     private readonly TimeProvider _time;
 
-    public StockService(IDbContextFactory<PressingDbContext> dbFactory, TimeProvider time)
+    public StockService(
+        IDbContextFactory<PressingDbContext> dbFactory,
+        ICurrentUserContext session,
+        TimeProvider time)
     {
         _dbFactory = dbFactory;
+        _session = session;
         _time = time;
     }
 
@@ -32,6 +37,8 @@ public sealed class StockService : IStockService
         bool includeInactive = false,
         CancellationToken cancellationToken = default)
     {
+        _session.Require(Permission.ViewStock);
+
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
         IQueryable<Product> query = db.Products.AsNoTracking();
@@ -53,6 +60,8 @@ public sealed class StockService : IStockService
         int productId,
         CancellationToken cancellationToken = default)
     {
+        _session.Require(Permission.ViewStock);
+
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
         var product = await db.Products
@@ -73,6 +82,7 @@ public sealed class StockService : IStockService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session.Require(Permission.ManageStock);
 
         var name = InputValidation.RequireText(request.Name, "Le nom du produit", NameMaxLength);
         var unit = InputValidation.RequireText(request.Unit, "L'unité", UnitMaxLength);
@@ -100,6 +110,7 @@ public sealed class StockService : IStockService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session.Require(Permission.ManageStock);
 
         var name = InputValidation.RequireText(request.Name, "Le nom du produit", NameMaxLength);
         var unit = InputValidation.RequireText(request.Unit, "L'unité", UnitMaxLength);
@@ -127,6 +138,7 @@ public sealed class StockService : IStockService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        _session.Require(Permission.ManageStock);
 
         if (!Enum.IsDefined(request.Type))
         {
@@ -190,6 +202,8 @@ public sealed class StockService : IStockService
         int productId,
         CancellationToken cancellationToken = default)
     {
+        _session.Require(Permission.ViewStock);
+
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
         var movements = await db.StockMovements

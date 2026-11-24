@@ -22,8 +22,8 @@ public interface IStockService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Enregistre une entree, une sortie ou un ajustement. Leve InvalidOperationException
-    /// si la quantite n'est pas positive ou si une sortie rendrait le stock negatif.
+    /// Enregistre une entree, une sortie ou un ajustement (permission ManageStock). Leve
+    /// BusinessRuleException si la quantite n'est pas positive ou si une sortie rendrait le stock negatif.
     /// </summary>
     Task<StockMovementDto> RecordMovementAsync(
         RecordStockMovementDto request,

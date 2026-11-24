@@ -19,7 +19,7 @@ public class StockServiceTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
-    private StockService CreateService() => new(_db, _clock);
+    private StockService CreateService() => new(_db, ProcessingTestSession.SignedIn(), _clock);
 
     private static Task<ProductDto> NewProduct(StockService service, string name = "Détergent", decimal threshold = 5m) =>
         service.CreateProductAsync(new CreateProductDto(name, "kg", threshold));
