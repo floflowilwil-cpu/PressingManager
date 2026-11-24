@@ -22,33 +22,39 @@ public static class PaymentReceiptPdfBuilder
     private const string BorderGrey = "#E2E8F0";
 
     private static readonly CultureInfo FrenchCulture = CultureInfo.GetCultureInfo("fr-FR");
+    private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
 
     static PaymentReceiptPdfBuilder()
     {
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public static void BuildReceiptPdf(PaymentReceiptDto receipt, string filePath)
+    public static void BuildReceiptPdf(PaymentReceiptDto receipt, string filePath, bool isEnglish = false)
     {
         ArgumentNullException.ThrowIfNull(receipt);
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
-        CreateDocument(receipt).GeneratePdf(filePath);
+        CreateDocument(receipt, isEnglish).GeneratePdf(filePath);
     }
 
-    public static byte[] BuildReceiptPdfBytes(PaymentReceiptDto receipt)
+    public static byte[] BuildReceiptPdfBytes(PaymentReceiptDto receipt, bool isEnglish = false)
     {
         ArgumentNullException.ThrowIfNull(receipt);
 
-        return CreateDocument(receipt).GeneratePdf();
+        return CreateDocument(receipt, isEnglish).GeneratePdf();
     }
 
-    private static IDocument CreateDocument(PaymentReceiptDto receipt)
+    private static IDocument CreateDocument(PaymentReceiptDto receipt, bool isEnglish)
     {
-        var statusText = receipt.IsFullyPaid ? "COMMANDE SOLDEE" : "PAIEMENT PARTIEL";
+        var statusText = isEnglish
+            ? (receipt.IsFullyPaid ? "PAID IN FULL" : "PARTIAL PAYMENT")
+            : (receipt.IsFullyPaid ? "COMMANDE SOLDEE" : "PAIEMENT PARTIEL");
         var statusBg = receipt.IsFullyPaid ? EmeraldLight : AmberLight;
         var statusColor = receipt.IsFullyPaid ? Emerald : Amber;
-        var localDateText = receipt.PaidAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm", FrenchCulture);
+        var culture = isEnglish ? EnglishCulture : FrenchCulture;
+        var dateFormat = isEnglish ? "MM/dd/yyyy HH:mm" : "dd/MM/yyyy HH:mm";
+        var localDateText = receipt.PaidAt.ToLocalTime().ToString(dateFormat, culture);
+        var methodLabel = PaymentReceiptGenerator.GetMethodLabel(receipt.Method, isEnglish);
 
         return Document.Create(document =>
         {
@@ -64,7 +70,7 @@ public static class PaymentReceiptPdfBuilder
                     {
                         col.Item().Text("PRESSING MANAGER")
                             .FontSize(15).Bold().FontColor(Colors.White);
-                        col.Item().Text("RECU OFFICIEL DE PAIEMENT")
+                        col.Item().Text(isEnglish ? "OFFICIAL PAYMENT RECEIPT" : "RECU OFFICIEL DE PAIEMENT")
                             .FontSize(9).SemiBold().FontColor(Turquoise);
                     });
 
@@ -82,9 +88,9 @@ public static class PaymentReceiptPdfBuilder
                     {
                         row.RelativeItem().Column(col =>
                         {
-                            col.Item().Text("PAIEMENT VALIDE AVEC SUCCES")
+                            col.Item().Text(isEnglish ? "PAYMENT SUCCESSFULLY VALIDATED" : "PAIEMENT VALIDE AVEC SUCCES")
                                 .FontSize(12).Bold().FontColor("#065F46");
-                            col.Item().Text($"Enregistre le {localDateText}")
+                            col.Item().Text(isEnglish ? $"Recorded on {localDateText}" : $"Enregistre le {localDateText}")
                                 .FontSize(9).FontColor("#047857");
                         });
 
@@ -102,14 +108,14 @@ public static class PaymentReceiptPdfBuilder
                             cols.RelativeColumn();
                         });
 
-                        InfoCell(table.Cell(), "CLIENT", receipt.CustomerName);
-                        InfoCell(table.Cell(), "N° COMMANDE", receipt.OrderNumber);
-                        InfoCell(table.Cell(), "MODE DE PAIEMENT", receipt.MethodLabel);
-                        InfoCell(table.Cell(), "CAISSIER", receipt.CashierName);
+                        InfoCell(table.Cell(), isEnglish ? "CUSTOMER" : "CLIENT", receipt.CustomerName);
+                        InfoCell(table.Cell(), isEnglish ? "ORDER NO." : "N° COMMANDE", receipt.OrderNumber);
+                        InfoCell(table.Cell(), isEnglish ? "PAYMENT METHOD" : "MODE DE PAIEMENT", methodLabel);
+                        InfoCell(table.Cell(), isEnglish ? "CASHIER" : "CAISSIER", receipt.CashierName);
 
                         if (!string.IsNullOrWhiteSpace(receipt.Reference))
                         {
-                            InfoCell(table.Cell().ColumnSpan(2), "REFERENCE TRANSACTION", receipt.Reference);
+                            InfoCell(table.Cell().ColumnSpan(2), isEnglish ? "TRANSACTION REFERENCE" : "REFERENCE TRANSACTION", receipt.Reference);
                         }
                     });
 
@@ -122,13 +128,13 @@ public static class PaymentReceiptPdfBuilder
                             cols.ConstantColumn(115);
                         });
 
-                        AmountRow(table, "Total de la commande", MoneyFormatter.Format(receipt.OrderTotal), false, Navy);
-                        AmountRow(table, "Montant verse (ce recu)", MoneyFormatter.Format(receipt.AmountPaid), true, Emerald);
-                        AmountRow(table, "Total deja paye", MoneyFormatter.Format(receipt.TotalPaidOnOrder), false, Navy);
-                        AmountRow(table, "Solde restant a payer", MoneyFormatter.Format(receipt.RemainingBalance), true, statusColor);
+                        AmountRow(table, isEnglish ? "Order total" : "Total de la commande", FormatAmount(receipt.OrderTotal, isEnglish), false, Navy);
+                        AmountRow(table, isEnglish ? "Amount paid (this receipt)" : "Montant verse (ce recu)", FormatAmount(receipt.AmountPaid, isEnglish), true, Emerald);
+                        AmountRow(table, isEnglish ? "Total paid to date" : "Total deja paye", FormatAmount(receipt.TotalPaidOnOrder, isEnglish), false, Navy);
+                        AmountRow(table, isEnglish ? "Remaining balance" : "Solde restant a payer", FormatAmount(receipt.RemainingBalance, isEnglish), true, statusColor);
                     });
 
-                    column.Item().PaddingTop(8).AlignCenter().Text($"Justificatif N° {receipt.ReceiptNumber}")
+                    column.Item().PaddingTop(8).AlignCenter().Text(isEnglish ? $"Receipt No. {receipt.ReceiptNumber}" : $"Justificatif N° {receipt.ReceiptNumber}")
                         .FontSize(9).FontColor(Colors.Grey.Darken1);
                 });
 
@@ -136,12 +142,15 @@ public static class PaymentReceiptPdfBuilder
                 {
                     col.Item().LineHorizontal(0.5f).LineColor(BorderGrey);
                     col.Item().PaddingTop(6).AlignCenter()
-                        .Text("Merci pour votre confiance ! Conservez ce justificatif.")
+                        .Text(isEnglish ? "Thank you for your business! Please keep this receipt." : "Merci pour votre confiance ! Conservez ce justificatif.")
                         .FontSize(9).SemiBold().FontColor(Turquoise);
                 });
             });
         });
     }
+
+    private static string FormatAmount(decimal amount, bool isEnglish) =>
+        isEnglish ? amount.ToString("N2", EnglishCulture) : MoneyFormatter.Format(amount);
 
     private static void InfoCell(IContainer cell, string label, string value)
     {

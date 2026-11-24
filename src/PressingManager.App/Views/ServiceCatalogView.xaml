@@ -1,0 +1,178 @@
+<UserControl x:Class="PressingManager.App.Views.ServiceCatalogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:PressingManager.App.Localization"
+             Background="#F3F6FB">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,10,0,4" />
+            <Setter Property="Foreground" Value="#12365D" />
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,12,0,0" />
+            <Setter Property="Background" Value="#0864D9" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style x:Key="LightButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="#12365D" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#CBD5E0" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="32">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="330" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- En-tete : meme modele que Paiements et Utilisateurs -->
+        <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,18">
+            <Border Width="38" Height="38" CornerRadius="10" Background="#0F2A4A" Margin="0,0,12,0">
+                <Viewbox Width="22" Height="22">
+                    <Canvas Width="24" Height="24">
+                        <Path Stroke="#14B8A6" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              Data="M3,12 L12,3 L21,3 L21,12 L12,21 Z M16.5,7.5 L16.6,7.6" />
+                    </Canvas>
+                </Viewbox>
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{loc:T Svc_Title}" FontSize="22" FontWeight="Bold" Foreground="#0F2A4A" />
+                <TextBlock Text="{loc:T Svc_Subtitle}" FontSize="12" Foreground="#64748B" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- GAUCHE : catalogue puis historique des tarifs du service selectionne -->
+        <Grid Grid.Row="1" Margin="0,0,16,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="190" />
+            </Grid.RowDefinitions>
+
+            <Border Background="White" CornerRadius="10" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <CheckBox Content="{loc:T Svc_ShowInactive}" IsChecked="{Binding IncludeInactive, Mode=TwoWay}"
+                              Margin="0,0,0,8" Foreground="#12365D" />
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Services}"
+                              SelectedItem="{Binding SelectedService, Mode=TwoWay}"
+                              AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal" CanUserAddRows="False"
+                              BorderThickness="0" Background="White" RowHeight="34">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{loc:T Svc_ColName}" Binding="{Binding Name}" Width="170" />
+                            <DataGridTextColumn Header="{loc:T Svc_ColDescription}" Binding="{Binding Description}" Width="*" />
+                            <DataGridTextColumn Header="{loc:T Svc_ColPrices}" Binding="{Binding CurrentPrices}" Width="230" />
+                            <DataGridCheckBoxColumn Header="{loc:T Svc_ColActive}" Binding="{Binding IsActive, Mode=OneWay}" Width="70" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <TextBlock Grid.Row="1" Text="{loc:T Svc_PriceHistory}" FontWeight="Bold" Foreground="#08A6B5"
+                       Margin="2,14,0,6" />
+
+            <Border Grid.Row="2" Background="White" CornerRadius="10" Padding="12">
+                <DataGrid ItemsSource="{Binding PriceHistory}" AutoGenerateColumns="False" IsReadOnly="True"
+                          SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                          CanUserAddRows="False" BorderThickness="0" Background="White" RowHeight="30">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{loc:T Svc_ColUnit}" Binding="{Binding UnitText}" Width="130" />
+                        <DataGridTextColumn Header="{loc:T Svc_ColAmount}" Binding="{Binding AmountText}" Width="130" />
+                        <DataGridTextColumn Header="{loc:T Svc_ColFrom}"
+                                            Binding="{Binding ValidFromLocal, StringFormat='dd/MM/yyyy HH:mm'}" Width="150" />
+                        <DataGridTextColumn Header="{loc:T Svc_ColTo}" Binding="{Binding ValidToText}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+
+        <!-- DROITE : formulaires (masques en lecture seule) -->
+        <Border Grid.Row="1" Grid.Column="1" Padding="16" Background="White" CornerRadius="10">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="{loc:T Svc_ReadOnly}" TextWrapping="Wrap" Foreground="#64748B"
+                               Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVisibility}}" />
+
+                    <StackPanel Visibility="{Binding CanManage, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{loc:T Svc_NewService}" FontWeight="Bold" Foreground="#08A6B5" />
+
+                        <TextBlock Text="{loc:T Svc_Name}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+
+                        <TextBlock Text="{loc:T Svc_Description}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding NewDescription, UpdateSourceTrigger=PropertyChanged}" Padding="6"
+                                 TextWrapping="Wrap" AcceptsReturn="False" />
+
+                        <Button Content="{loc:T Svc_Create}" Command="{Binding CreateCommand}"
+                                Style="{StaticResource PrimaryButton}" />
+
+                        <Separator Margin="0,20" />
+
+                        <TextBlock Text="{loc:T Svc_Selected}" FontWeight="Bold" Foreground="#08A6B5" />
+
+                        <TextBlock Text="{loc:T Svc_Name}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+
+                        <TextBlock Text="{loc:T Svc_Description}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding EditDescription, UpdateSourceTrigger=PropertyChanged}" Padding="6"
+                                 TextWrapping="Wrap" />
+
+                        <Button Content="{loc:T Svc_Save}" Command="{Binding UpdateCommand}"
+                                Style="{StaticResource PrimaryButton}" />
+                        <Button Content="{loc:T Svc_Toggle}" Command="{Binding ToggleActiveCommand}"
+                                Style="{StaticResource LightButton}" />
+
+                        <Separator Margin="0,20" />
+
+                        <TextBlock Text="{loc:T Svc_NewPrice}" FontWeight="Bold" Foreground="#08A6B5" />
+
+                        <TextBlock Text="{loc:T Svc_Unit}" Style="{StaticResource FieldLabel}" />
+                        <ComboBox ItemsSource="{Binding Units}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding SelectedUnit}" Padding="6" />
+
+                        <TextBlock Text="{loc:T Svc_Amount}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding PriceAmountText, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+
+                        <Button Content="{loc:T Svc_SetPrice}" Command="{Binding SetPriceCommand}"
+                                Style="{StaticResource PrimaryButton}" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding Message}" Margin="0,12,0,0"
+                   TextWrapping="Wrap" FontSize="14">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#1E8449" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsError}" Value="True">
+                            <Setter Property="Foreground" Value="#C0392B" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+    </Grid>
+</UserControl>

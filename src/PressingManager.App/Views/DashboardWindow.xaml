@@ -106,42 +106,59 @@
                                Margin="0,2,0,0"/>
                 </StackPanel>
 
-                <StackPanel>
-                    <TextBlock Text="{loc:T Nav_MainMenu}"
-                               Foreground="#91A8C2"
-                               FontSize="11"
-                               FontWeight="SemiBold"
-                               Margin="22,0,0,15"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="{loc:T Nav_MainMenu}"
+                                   Foreground="#91A8C2"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Margin="22,0,0,15"/>
 
-                    <Button x:Name="BtnDashboard"
-                            Content="{loc:T Nav_Dashboard}"
-                            Style="{StaticResource ActiveSidebarButton}"
-                            Click="BtnDashboard_Click"/>
+                        <Button x:Name="BtnDashboard"
+                                Content="{loc:T Nav_Dashboard}"
+                                Style="{StaticResource ActiveSidebarButton}"
+                                Click="BtnDashboard_Click"/>
 
-                    <Button Content="{loc:T Nav_Clients}"
-                            Style="{StaticResource SidebarButton}"/>
+                        <Button Content="{loc:T Nav_Clients}"
+                                Style="{StaticResource SidebarButton}"/>
 
-                    <Button Content="{loc:T Nav_Orders}"
-                            Style="{StaticResource SidebarButton}"/>
+                        <Button Content="{loc:T Nav_Orders}"
+                                Style="{StaticResource SidebarButton}"/>
 
-                    <Button Content="{loc:T Nav_Garments}"
-                            Style="{StaticResource SidebarButton}"/>
+                        <Button Content="{loc:T Nav_Garments}"
+                                Style="{StaticResource SidebarButton}"/>
 
-                    <Button x:Name="BtnPayments"
-                            Content="{loc:T Nav_Payments}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnPayments_Click"/>
+                        <Button x:Name="BtnProcessing"
+                                Content="{loc:T Nav_Processing}"
+                                Style="{StaticResource SidebarButton}"
+                                Click="BtnProcessing_Click"/>
 
-                    <Button x:Name="BtnStatistics"
-                            Content="{loc:T Nav_Statistics}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnStatistics_Click"/>
+                        <Button x:Name="BtnServices"
+                                Content="{loc:T Nav_Services}"
+                                Style="{StaticResource SidebarButton}"
+                                Click="BtnServices_Click"/>
 
-                    <Button x:Name="BtnUsers"
-                            Content="{loc:T Nav_Users}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnUsers_Click"/>
-                </StackPanel>
+                        <Button x:Name="BtnPayments"
+                                Content="{loc:T Nav_Payments}"
+                                Style="{StaticResource SidebarButton}"
+                                Click="BtnPayments_Click"/>
+
+                        <Button x:Name="BtnStock"
+                                Content="{loc:T Nav_Stock}"
+                                Style="{StaticResource SidebarButton}"
+                                Click="BtnStock_Click"/>
+
+                        <Button x:Name="BtnStatistics"
+                                Content="{loc:T Nav_Statistics}"
+                                Style="{StaticResource SidebarButton}"
+                                Click="BtnStatistics_Click"/>
+
+                        <Button x:Name="BtnUsers"
+                                Content="{loc:T Nav_Users}"
+                                Style="{StaticResource SidebarButton}"
+                                Click="BtnUsers_Click"/>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <TextBlock DockPanel.Dock="Bottom"
                            Text="Pressing Manager © 2026"
@@ -152,7 +169,7 @@
             </DockPanel>
         </Border>
 
-        <!-- CONTENU PRINCIPAL -->
+        <!-- TABLEAU DE BORD -->
         <Grid x:Name="DashboardHomeContent"
               Grid.Column="1"
               Margin="32">
@@ -183,7 +200,7 @@
                        Foreground="#12365D"
                        Margin="0,0,0,16"/>
 
-            <!-- CARTES STATISTIQUES -->
+            <!-- CARTES STATISTIQUES DYNAMIQUES -->
             <UniformGrid Grid.Row="2" Columns="4" Margin="0,0,0,25">
 
                 <!-- CLIENTS -->
@@ -303,18 +320,28 @@
 
         </Grid>
 
-        <!-- MODULE PAIEMENTS -->
+        <!-- MODULES -->
         <ContentControl x:Name="PaymentsContentHost"
                         Grid.Column="1"
                         Visibility="Collapsed"/>
 
-        <!-- MODULE STATISTIQUES -->
         <ContentControl x:Name="StatisticsContentHost"
                         Grid.Column="1"
                         Visibility="Collapsed"/>
 
-        <!-- MODULE UTILISATEURS -->
         <ContentControl x:Name="UsersContentHost"
+                        Grid.Column="1"
+                        Visibility="Collapsed"/>
+
+        <ContentControl x:Name="ProcessingContentHost"
+                        Grid.Column="1"
+                        Visibility="Collapsed"/>
+
+        <ContentControl x:Name="ServicesContentHost"
+                        Grid.Column="1"
+                        Visibility="Collapsed"/>
+
+        <ContentControl x:Name="StockContentHost"
                         Grid.Column="1"
                         Visibility="Collapsed"/>
 
