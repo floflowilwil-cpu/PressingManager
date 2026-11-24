@@ -13,7 +13,7 @@ Branche : `feature/auth-reports`
 | Hachage des mots de passe | `IPasswordHasher` | `Pbkdf2PasswordHasher` (PBKDF2-SHA256, sans package externe) |
 | Rapports | `IReportService` + `ReportCalculator` | `ReportService` (commandes, synthèse financière, soldes impayés, à récupérer) |
 | Indicateurs du tableau de bord | `IDashboardService` + `DashboardCalculator` | `DashboardService` |
-| Export CSV des rapports | `IReportExportService` + `CsvExporter` | `ReportExportService` (permission + audit) |
+| Export CSV et PDF des rapports | `IReportExportService` + `CsvExporter` | `ReportExportService` + `PdfReportBuilder` (QuestPDF) ; permission + audit |
 
 Écrans WPF : `Views/LoginWindow` et `Views/UserManagementView` (+ ViewModels).
 
@@ -113,7 +113,8 @@ var toPickUp    = await reports.GetAwaitingPickupAsync();
 var dashboard   = await dashboardService.GetSummaryAsync();                // tableau de bord
 
 // Export : l'écran choisit le chemin (SaveFileDialog), le service vérifie la permission et écrit l'audit
-await exportService.ExportOrdersAsync(orders, path, "Commandes 01/11/2026 - 30/11/2026");
+await exportService.ExportOrdersAsync(orders, path, "Commandes 01/11/2026 - 30/11/2026");     // .csv
+await exportService.ExportOrdersPdfAsync(orders, path, "Commandes 01/11/2026 - 30/11/2026");  // .pdf
 ```
 
 - Les dates des `OrderReportRow` sont en **UTC** : les convertir en heure locale pour l'affichage (`ToLocalTime()`).
@@ -129,4 +130,5 @@ await exportService.ExportOrdersAsync(orders, path, "Commandes 01/11/2026 - 30/1
   côté base). Très suffisant pour un pressing ; à revoir si la base atteint des dizaines de milliers de commandes.
 - « Encaissé » = paiements valides **datés dans la période** (même pour une commande créée avant) ; « Facturé » = commandes
   **créées dans la période**. Les deux ne se comparent donc pas ligne à ligne.
-- Export PDF : non fait (phase dédiée, section 4.10 de la documentation) ; le CSV s'ouvre directement dans Excel.
+- Export PDF : liste des commandes uniquement (pas encore de PDF pour la synthèse financière). Il utilise QuestPDF (licence Community :
+  gratuite pour un projet scolaire ou une petite entreprise). Le CSV s'ouvre directement dans Excel.
