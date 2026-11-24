@@ -76,6 +76,12 @@ public partial class App : Application
                 {
                     UserSeed.Seed(db, _serviceProvider.GetRequiredService<IPasswordHasher>());
                 }
+
+#if DEBUG
+                // Catalogue de services et produits d'exemple pour tester (idempotent : ne cree que si les tables sont vides).
+                // Les tarifs sont a ajuster avec le gerant.
+                ProcessingSeed.Seed(db);
+#endif
             }
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
