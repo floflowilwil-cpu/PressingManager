@@ -162,6 +162,38 @@
 
                             <StackPanel>
 
+                                <!-- NOM COMPLET : PREMIÈRE UTILISATION -->
+                                <StackPanel>
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSetupMode}"
+                                                             Value="True">
+                                                    <Setter Property="Visibility"
+                                                            Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
+                                    <TextBlock Text="Nom complet"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Foreground="#123D7A"
+                                               Margin="0,0,0,10"/>
+
+                                    <Border Style="{StaticResource InputBorder}">
+                                        <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Padding="12"
+                                                 FontSize="15"
+                                                 VerticalContentAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+
                                 <!-- NOM UTILISATEUR -->
                                 <TextBlock x:Name="txtUsernameLabel"
                                            Text="Nom d'utilisateur"
@@ -187,6 +219,7 @@
 
                                         <TextBox x:Name="txtUsername"
                                                  Grid.Column="1"
+                                                 Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                                                  Background="Transparent"
                                                  BorderThickness="0"
                                                  Padding="8"
@@ -208,6 +241,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="50"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="42"/>
                                         </Grid.ColumnDefinitions>
 
                                         <TextBlock Grid.Column="0"
@@ -224,9 +258,102 @@
                                                      BorderThickness="0"
                                                      Padding="8"
                                                      FontSize="15"
-                                                     VerticalContentAlignment="Center"/>
+                                                     VerticalContentAlignment="Center"
+                                                     PasswordChanged="TxtPassword_PasswordChanged"/>
+
+                                        <TextBox x:Name="txtPasswordVisible"
+                                                 Grid.Column="1"
+                                                 Visibility="Collapsed"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Padding="8"
+                                                 FontSize="15"
+                                                 VerticalContentAlignment="Center"
+                                                 TextChanged="TxtPasswordVisible_TextChanged"/>
+
+                                        <Button x:Name="btnTogglePassword"
+                                                Grid.Column="2"
+                                                Content="&#xE890;"
+                                                FontFamily="Segoe MDL2 Assets"
+                                                FontSize="18"
+                                                Foreground="#0864D9"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                ToolTip="Afficher le mot de passe"
+                                                Click="BtnTogglePassword_Click"/>
                                     </Grid>
                                 </Border>
+
+                                <!-- CONFIRMATION DU MOT DE PASSE -->
+                                <StackPanel>
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSetupMode}"
+                                                             Value="True">
+                                                    <Setter Property="Visibility"
+                                                            Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
+                                    <TextBlock Text="Confirmer le mot de passe"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Foreground="#123D7A"
+                                               Margin="0,0,0,10"/>
+
+                                    <Border Style="{StaticResource InputBorder}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="42"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <PasswordBox x:Name="txtConfirmPassword"
+                                                         Grid.Column="0"
+                                                         Background="Transparent"
+                                                         BorderThickness="0"
+                                                         Padding="8"
+                                                         FontSize="15"
+                                                         VerticalContentAlignment="Center"
+                                                         PasswordChanged="TxtConfirmPassword_PasswordChanged"/>
+
+                                            <TextBox x:Name="txtConfirmPasswordVisible"
+                                                     Grid.Column="0"
+                                                     Visibility="Collapsed"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     Padding="8"
+                                                     FontSize="15"
+                                                     VerticalContentAlignment="Center"
+                                                     TextChanged="TxtConfirmPasswordVisible_TextChanged"/>
+
+                                            <Button x:Name="btnToggleConfirmPassword"
+                                                    Grid.Column="1"
+                                                    Content="&#xE890;"
+                                                    FontFamily="Segoe MDL2 Assets"
+                                                    FontSize="18"
+                                                    Foreground="#0864D9"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Cursor="Hand"
+                                                    ToolTip="Afficher le mot de passe"
+                                                    Click="BtnToggleConfirmPassword_Click"/>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- MESSAGE D'ERREUR -->
+                                <TextBlock Text="{Binding ErrorMessage}"
+                                           Foreground="#D93025"
+                                           FontSize="13"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,15"/>
 
                                 <!-- SE SOUVENIR DE MOI -->
                                 <CheckBox x:Name="chkRemember"
@@ -237,11 +364,10 @@
 
                                 <!-- BOUTON CONNEXION -->
                                 <Button x:Name="btnLogin"
-                                    Content="{Binding SubmitLabel}"
-                                    Height="58"
-                                    Style="{StaticResource PrimaryButton}"
-                                    Click="BtnLogin_Click"
-                                />
+                                        Content="{Binding SubmitLabel}"
+                                        Height="58"
+                                        Style="{StaticResource PrimaryButton}"
+                                        Click="BtnLogin_Click"/>
 
                                 <!-- MOT DE PASSE OUBLIÉ -->
                                 <TextBlock x:Name="txtForgotPassword"
