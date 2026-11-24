@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Data;
+using PressingManager.App.Localization;
 using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
 
@@ -29,15 +30,9 @@ namespace PressingManager.App
 
             Loaded += async (_, _) =>
             {
+                UpdateLanguageButtons();
                 await _viewModel.InitializeAsync();
             };
-        }
-
-        // ACTUALISATION DU SOUS-TITRE
-        private void RefreshSubtitle()
-        {
-            txtSubtitle.GetBindingExpression(TextBlock.TextProperty)
-                ?.UpdateTarget();
         }
 
         // CONNEXION REUSSIE
@@ -97,7 +92,7 @@ namespace PressingManager.App
                 txtPasswordVisible.Visibility = Visibility.Visible;
 
                 btnTogglePassword.Content = "\uE8A7";
-                btnTogglePassword.ToolTip = "Masquer le mot de passe";
+                btnTogglePassword.ToolTip = Loc.Instance["Login_HidePassword"];
 
                 txtPasswordVisible.Focus();
                 txtPasswordVisible.CaretIndex =
@@ -111,7 +106,7 @@ namespace PressingManager.App
                 txtPassword.Visibility = Visibility.Visible;
 
                 btnTogglePassword.Content = "\uE890";
-                btnTogglePassword.ToolTip = "Afficher le mot de passe";
+                btnTogglePassword.ToolTip = Loc.Instance["Login_ShowPassword"];
 
                 txtPassword.Focus();
             }
@@ -152,7 +147,7 @@ namespace PressingManager.App
 
                 btnToggleConfirmPassword.Content = "\uE8A7";
                 btnToggleConfirmPassword.ToolTip =
-                    "Masquer le mot de passe";
+                    Loc.Instance["Login_HidePassword"];
 
                 txtConfirmPasswordVisible.Focus();
                 txtConfirmPasswordVisible.CaretIndex =
@@ -170,56 +165,36 @@ namespace PressingManager.App
 
                 btnToggleConfirmPassword.Content = "\uE890";
                 btnToggleConfirmPassword.ToolTip =
-                    "Afficher le mot de passe";
+                    Loc.Instance["Login_ShowPassword"];
 
                 txtConfirmPassword.Focus();
             }
         }
 
-        // LANGUE FRANCAISE
+        // LANGUES : les textes se mettent a jour tout seuls (voir Localization/Loc.cs)
         private void BtnFrench_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.IsEnglish = false;
-            RefreshSubtitle();
-
-            txtWelcome.Text = "Bienvenue !";
-            txtUsernameLabel.Text = "Nom d'utilisateur";
-            txtPasswordLabel.Text = "Mot de passe";
-            chkRemember.Content = "Se souvenir de moi";
-            txtForgotPassword.Text = "Mot de passe oublié ?";
-
-            btnFrench.Background =
-                new SolidColorBrush(Color.FromRgb(8, 100, 217));
-
-            btnFrench.Foreground = Brushes.White;
-
-            btnEnglish.Background = Brushes.Transparent;
-
-            btnEnglish.Foreground =
-                new SolidColorBrush(Color.FromRgb(23, 74, 145));
+            Loc.Instance.SetLanguage(AppLanguage.Fr);
+            UpdateLanguageButtons();
         }
 
-        // LANGUE ANGLAISE
         private void BtnEnglish_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.IsEnglish = true;
-            RefreshSubtitle();
+            Loc.Instance.SetLanguage(AppLanguage.En);
+            UpdateLanguageButtons();
+        }
 
-            txtWelcome.Text = "Welcome!";
-            txtUsernameLabel.Text = "Username";
-            txtPasswordLabel.Text = "Password";
-            chkRemember.Content = "Remember me";
-            txtForgotPassword.Text = "Forgot password?";
+        private void UpdateLanguageButtons()
+        {
+            var selectedBackground = new SolidColorBrush(Color.FromRgb(8, 100, 217));
+            var idleForeground = new SolidColorBrush(Color.FromRgb(23, 74, 145));
+            var english = Loc.Instance.IsEnglish;
 
-            btnEnglish.Background =
-                new SolidColorBrush(Color.FromRgb(8, 100, 217));
+            btnFrench.Background = english ? Brushes.Transparent : selectedBackground;
+            btnFrench.Foreground = english ? idleForeground : Brushes.White;
 
-            btnEnglish.Foreground = Brushes.White;
-
-            btnFrench.Background = Brushes.Transparent;
-
-            btnFrench.Foreground =
-                new SolidColorBrush(Color.FromRgb(23, 74, 145));
+            btnEnglish.Background = english ? selectedBackground : Brushes.Transparent;
+            btnEnglish.Foreground = english ? Brushes.White : idleForeground;
         }
     }
 }

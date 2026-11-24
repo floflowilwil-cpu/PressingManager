@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PressingManager.App.Localization;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
@@ -49,13 +50,13 @@ public sealed record ReportRowItem(OrderReportRow Source)
 
     public string CustomerName => Source.CustomerName;
 
-    public string StatusLabel => OrderStatusLabels.ToFrench(Source.Status);
+    public string StatusLabel => Loc.Instance.Status(Source.Status);
 
-    public string TotalText => MoneyFormatter.Format(Source.Total);
+    public string TotalText => MoneyFormatter.FormatFcfa(Source.Total, withCurrency: false);
 
-    public string PaidText => MoneyFormatter.Format(Source.AmountPaid);
+    public string PaidText => MoneyFormatter.FormatFcfa(Source.AmountPaid, withCurrency: false);
 
-    public string BalanceText => MoneyFormatter.Format(Source.Balance);
+    public string BalanceText => MoneyFormatter.FormatFcfa(Source.Balance, withCurrency: false);
 
     /// <summary>Vrai si le client doit encore de l'argent (commande non annulee).</summary>
     public bool HasBalance => Source.Status != OrderStatus.Cancelled && Source.Balance > 0;
@@ -82,6 +83,8 @@ public partial class ReportsViewModel : ObservableObject
     private IReadOnlyList<OrderReportRow> _awaitingPickup = Array.Empty<OrderReportRow>();
     private IReadOnlyList<OrderReportRow> _displayed = Array.Empty<OrderReportRow>();
     private FinancialSummary? _previousSummary;
+    private IReadOnlyList<TrendPoint> _trend = Array.Empty<TrendPoint>();
+    private IReadOnlyList<ServiceShare> _shares = Array.Empty<ServiceShare>();
     private decimal _serviceTotal;
     private decimal _chartMax;
     private bool _refreshPending;
@@ -92,15 +95,16 @@ public partial class ReportsViewModel : ObservableObject
         _exports = exports;
         _session = session;
 
-        StatusFilters = new[] { new StatusFilterOption(null, "Tous les statuts") }
-            .Concat(Enum.GetValues<OrderStatus>().Select(s => new StatusFilterOption(s, OrderStatusLabels.ToFrench(s))))
-            .ToList();
-        _selectedStatus = StatusFilters[0];
+        _statusFilters = BuildStatusFilters();
+        _selectedStatus = _statusFilters[0];
+
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
 
         (_fromDate, _toDate) = PeriodDates(ReportPeriodKind.Month);
     }
 
-    public IReadOnlyList<StatusFilterOption> StatusFilters { get; }
+    [ObservableProperty]
+    private IReadOnlyList<StatusFilterOption> _statusFilters;
 
     public ObservableCollection<ReportRowItem> Rows { get; } = new();
 
@@ -190,11 +194,11 @@ public partial class ReportsViewModel : ObservableObject
 
     // --- Cartes (Recettes / Depenses / Benefice) -------------------------------------------------
 
-    public string CollectedText => MoneyFormatter.Format(Summary?.TotalCollected ?? 0m);
+    public string CollectedText => MoneyFormatter.FormatFcfa(Summary?.TotalCollected ?? 0m);
 
-    public string ExpensesText => MoneyFormatter.Format(Summary?.TotalExpenses ?? 0m);
+    public string ExpensesText => MoneyFormatter.FormatFcfa(Summary?.TotalExpenses ?? 0m);
 
-    public string NetResultText => MoneyFormatter.Format(Summary?.NetResult ?? 0m);
+    public string NetResultText => MoneyFormatter.FormatFcfa(Summary?.NetResult ?? 0m);
 
     public bool IsNetNegative => (Summary?.NetResult ?? 0m) < 0m;
 
@@ -203,10 +207,6 @@ public partial class ReportsViewModel : ObservableObject
     public string ExpensesTrendText => Delta(Summary?.TotalExpenses ?? 0m, _previousSummary?.TotalExpenses ?? 0m);
 
     public string NetTrendText => Delta(Summary?.NetResult ?? 0m, _previousSummary?.NetResult ?? 0m);
-
-    public string OrderCountText => $"{Summary?.OrderCount ?? 0} commande(s)";
-
-    public string OutstandingText => $"Soldes dus : {MoneyFormatter.Format(Summary?.OutstandingBalance ?? 0m)}";
 
     // --- Graphiques -----------------------------------------------------------------------------
 
@@ -224,7 +224,7 @@ public partial class ReportsViewModel : ObservableObject
 
     public string ServiceTotalText => Compact(_serviceTotal);
 
-    public string DisplayedCountText => $"{Rows.Count} ligne(s)";
+    public string DisplayedCountText => Loc.Instance.Format("Stats_Rows", Rows.Count);
 
     partial void OnSummaryChanged(FinancialSummary? value) => OnPropertyChanged(string.Empty);
 
@@ -250,7 +250,7 @@ public partial class ReportsViewModel : ObservableObject
         do
         {
             _refreshPending = false;
-            await RunAsync(LoadAsync, successMessage: null);
+            await RunAsync(LoadAsync, successKey: null);
         }
         while (_refreshPending);
     }
@@ -271,7 +271,7 @@ public partial class ReportsViewModel : ObservableObject
         {
             await _exports.ExportOrdersAsync(_displayed, filePath, description);
         }
-    }, $"Export terminé : {filePath}");
+    }, "Stats_ExportDone", filePath);
 
     private static (DateTime From, DateTime To) PeriodDates(ReportPeriodKind period)
     {
@@ -291,7 +291,7 @@ public partial class ReportsViewModel : ObservableObject
     {
         if (FromDate is not { } from || ToDate is not { } to)
         {
-            throw new BusinessRuleException("Choisissez une date de début et une date de fin.");
+            throw new BusinessRuleException(Loc.Instance["Stats_NoDates"]);
         }
 
         var (fromUtc, toUtc) = ReportPeriod.ToUtcRange(from, to, TimeZoneInfo.Local);
@@ -307,11 +307,11 @@ public partial class ReportsViewModel : ObservableObject
         _awaitingPickup = await _reports.GetAwaitingPickupAsync();
         _previousSummary = await _reports.GetFinancialSummaryAsync(previousFromUtc, previousToUtc);
 
-        var trend = await _reports.GetTrendAsync(fromUtc, toUtc);
-        var shares = await _reports.GetServiceBreakdownAsync(fromUtc, toUtc);
+        _trend = await _reports.GetTrendAsync(fromUtc, toUtc);
+        _shares = await _reports.GetServiceBreakdownAsync(fromUtc, toUtc);
 
-        BuildBars(trend);
-        BuildServiceSlices(shares);
+        BuildBars();
+        BuildServiceSlices();
         ApplyView();
 
         // En dernier : declenche le rafraichissement de toutes les valeurs affichees.
@@ -321,8 +321,10 @@ public partial class ReportsViewModel : ObservableObject
         OnPropertyChanged(string.Empty);
     }
 
-    private void BuildBars(IReadOnlyList<TrendPoint> trend)
+    private void BuildBars()
     {
+        var trend = _trend;
+        var culture = Loc.Instance.Culture;
         _chartMax = trend.Count == 0 ? 0m : trend.Max(t => Math.Max(t.Collected, t.Expenses));
         var scale = _chartMax > 0m ? PlotHeight / (double)_chartMax : 0d;
         var labelStep = trend.Count <= 12 ? 1 : trend.Count <= 16 ? 2 : 5;
@@ -331,22 +333,31 @@ public partial class ReportsViewModel : ObservableObject
         for (var i = 0; i < trend.Count; i++)
         {
             var point = trend[i];
+            var label = point.IsMonthly
+                ? point.Period.ToString("MMM", culture)
+                : point.Period.ToString("dd/MM", culture);
+
             Bars.Add(new BarItem(
-                i % labelStep == 0 ? point.Label : string.Empty,
+                i % labelStep == 0 ? label : string.Empty,
                 (double)point.Collected * scale,
                 (double)point.Expenses * scale,
-                $"{point.Label}\nRecettes : {MoneyFormatter.Format(point.Collected)}\nDépenses : {MoneyFormatter.Format(point.Expenses)}"));
+                Loc.Instance.Format(
+                    "Stats_BarTooltip",
+                    label,
+                    MoneyFormatter.FormatFcfa(point.Collected),
+                    MoneyFormatter.FormatFcfa(point.Expenses))));
         }
     }
 
-    private void BuildServiceSlices(IReadOnlyList<ServiceShare> shares)
+    private void BuildServiceSlices()
     {
+        var shares = _shares;
         // Les 4 plus gros services, le reste regroupe dans « Autres ».
         var main = shares.Take(4).ToList();
         var restAmount = shares.Skip(4).Sum(s => s.Amount);
         if (restAmount > 0m)
         {
-            main.Add(new ServiceShare("Autres", restAmount));
+            main.Add(new ServiceShare(Loc.Instance["Stats_Others"], restAmount));
         }
 
         _serviceTotal = main.Sum(s => s.Amount);
@@ -367,7 +378,7 @@ public partial class ReportsViewModel : ObservableObject
             ServiceSlices.Add(new ServiceSliceItem(
                 share.ServiceName,
                 $"{Math.Round(fraction * 100d, 0, MidpointRounding.AwayFromZero):0}%",
-                MoneyFormatter.Format(share.Amount),
+                MoneyFormatter.FormatFcfa(share.Amount),
                 FrozenBrush(SlicePalette[i % SlicePalette.Length]),
                 BuildSlice(angle, sweep)));
 
@@ -423,7 +434,7 @@ public partial class ReportsViewModel : ObservableObject
     {
         if (previous == 0m)
         {
-            return current == 0m ? "—" : "Nouveau";
+            return current == 0m ? "—" : Loc.Instance["Stats_New"];
         }
 
         var percent = Math.Round((current - previous) / Math.Abs(previous) * 100m, 0, MidpointRounding.AwayFromZero);
@@ -438,15 +449,34 @@ public partial class ReportsViewModel : ObservableObject
     {
         if (amount >= 1_000_000m)
         {
-            return (amount / 1_000_000m).ToString("0.#", CultureInfo.GetCultureInfo("fr-FR")) + " M";
+            return (amount / 1_000_000m).ToString("0.#", Loc.Instance.Culture) + " M";
         }
 
         if (amount >= 1_000m)
         {
-            return (amount / 1_000m).ToString("0.#", CultureInfo.GetCultureInfo("fr-FR")) + " k";
+            return (amount / 1_000m).ToString("0.#", Loc.Instance.Culture) + " k";
         }
 
-        return amount.ToString("0", CultureInfo.GetCultureInfo("fr-FR"));
+        return amount.ToString("0", Loc.Instance.Culture);
+    }
+
+    private static List<StatusFilterOption> BuildStatusFilters() =>
+        new[] { new StatusFilterOption(null, Loc.Instance["Stats_AllStatuses"]) }
+            .Concat(Enum.GetValues<OrderStatus>().Select(s => new StatusFilterOption(s, Loc.Instance.Status(s))))
+            .ToList();
+
+    /// <summary>Le choix FR/EN se fait sur l'ecran de connexion ; on rafraichit quand meme si la langue change.</summary>
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        var selectedValue = SelectedStatus?.Value;
+
+        StatusFilters = BuildStatusFilters();
+        SelectedStatus = StatusFilters.First(f => f.Value == selectedValue);
+
+        BuildBars();
+        BuildServiceSlices();
+        ApplyView();
+        OnPropertyChanged(string.Empty);
     }
 
     private void ApplyView()
@@ -471,12 +501,12 @@ public partial class ReportsViewModel : ObservableObject
 
     private string BuildDescription() => SelectedView switch
     {
-        ReportViewKind.Outstanding => $"Soldes impayés au {DateTime.Today:dd/MM/yyyy}",
-        ReportViewKind.AwaitingPickup => $"Commandes prêtes à récupérer au {DateTime.Today:dd/MM/yyyy}",
-        _ => $"Commandes du {FromDate:dd/MM/yyyy} au {ToDate:dd/MM/yyyy}"
+        ReportViewKind.Outstanding => Loc.Instance.Format("Stats_DescDue", $"{DateTime.Today:dd/MM/yyyy}"),
+        ReportViewKind.AwaitingPickup => Loc.Instance.Format("Stats_DescPickup", $"{DateTime.Today:dd/MM/yyyy}"),
+        _ => Loc.Instance.Format("Stats_DescOrders", $"{FromDate:dd/MM/yyyy}", $"{ToDate:dd/MM/yyyy}")
     };
 
-    private async Task RunAsync(Func<Task> action, string? successMessage)
+    private async Task RunAsync(Func<Task> action, string? successKey, params object[] successArgs)
     {
         if (IsBusy)
         {
@@ -489,7 +519,7 @@ public partial class ReportsViewModel : ObservableObject
         {
             await action();
             IsError = false;
-            Message = successMessage;
+            Message = successKey is null ? null : Loc.Instance.Format(successKey, successArgs);
         }
         catch (Exception ex) when (ex is BusinessRuleException or PermissionDeniedException)
         {
@@ -499,7 +529,7 @@ public partial class ReportsViewModel : ObservableObject
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             IsError = true;
-            Message = $"Impossible d'écrire le fichier (est-il ouvert dans un autre programme ?) : {ex.Message}";
+            Message = Loc.Instance.Format("Stats_FileError", ex.Message);
         }
         finally
         {
