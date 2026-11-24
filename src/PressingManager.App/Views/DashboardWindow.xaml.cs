@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using PressingManager.App.ViewModels;
@@ -15,10 +16,7 @@ public partial class DashboardWindow : Window
         Home,
         Payments,
         Statistics,
-        Users,
-        Processing,
-        Services,
-        Stock
+        Users
     }
 
     private readonly PaymentManagementView _paymentManagementView;
@@ -27,6 +25,7 @@ public partial class DashboardWindow : Window
     private readonly OrderProcessingView _orderProcessingView;
     private readonly ServiceCatalogView _serviceCatalogView;
     private readonly StockView _stockView;
+    private readonly ICurrentUserContext _session;
 
     public DashboardWindow(
         PaymentManagementView paymentManagementView,
@@ -45,13 +44,14 @@ public partial class DashboardWindow : Window
         _orderProcessingView = orderProcessingView ?? throw new ArgumentNullException(nameof(orderProcessingView));
         _serviceCatalogView = serviceCatalogView ?? throw new ArgumentNullException(nameof(serviceCatalogView));
         _stockView = stockView ?? throw new ArgumentNullException(nameof(stockView));
+        _session = session ?? throw new ArgumentNullException(nameof(session));
 
         PaymentsContentHost.Content = _paymentManagementView;
         StatisticsContentHost.Content = _reportsView;
         UsersContentHost.Content = _userManagementView;
-        ProcessingContentHost.Content = _orderProcessingView;
-        ServicesContentHost.Content = _serviceCatalogView;
-        StockContentHost.Content = _stockView;
+        ProcessingDashboardHost.Content = _orderProcessingView;
+        ServicesDashboardHost.Content = _serviceCatalogView;
+        StockDashboardHost.Content = _stockView;
 
         // La fenetre est creee avant la connexion : on lit les droits au moment ou elle s'affiche.
         // Confort visuel seulement : le vrai controle d'acces est fait dans les services.
@@ -59,17 +59,25 @@ public partial class DashboardWindow : Window
         {
             BtnStatistics.Visibility = VisibleIf(session, Permission.ViewReports);
             BtnUsers.Visibility = VisibleIf(session, Permission.ManageUsers);
-            BtnProcessing.Visibility = VisibleIf(session, Permission.ViewOrders);
-            BtnServices.Visibility = VisibleIf(session, Permission.ManageServices);
-            BtnStock.Visibility = VisibleIf(session, Permission.ViewStock);
+            ProcessingDashboardSection.Visibility = VisibleIf(_session, Permission.ViewOrders);
+            ServicesDashboardSection.Visibility = VisibleIf(_session, Permission.ManageServices);
+            StockDashboardSection.Visibility = VisibleIf(_session, Permission.ViewStock);
+        };
+
+        Loaded += async (_, _) =>
+        {
+            await RefreshPersonThreeModulesAsync();
         };
     }
 
     private static Visibility VisibleIf(ICurrentUserContext session, Permission permission) =>
         session.HasPermission(permission) ? Visibility.Visible : Visibility.Collapsed;
 
-    private void BtnDashboard_Click(object sender, RoutedEventArgs e) =>
+    private async void BtnDashboard_Click(object sender, RoutedEventArgs e)
+    {
         SwitchSection(Section.Home);
+        await RefreshPersonThreeModulesAsync();
+    }
 
     private async void BtnPayments_Click(object sender, RoutedEventArgs e)
     {
@@ -93,22 +101,16 @@ public partial class DashboardWindow : Window
         await _userManagementView.RefreshAsync();
     }
 
-    private async void BtnProcessing_Click(object sender, RoutedEventArgs e)
+    private async Task RefreshPersonThreeModulesAsync()
     {
-        SwitchSection(Section.Processing);
-        await _orderProcessingView.RefreshAsync();
-    }
+        if (_session.HasPermission(Permission.ViewOrders))
+            await _orderProcessingView.RefreshAsync();
 
-    private async void BtnServices_Click(object sender, RoutedEventArgs e)
-    {
-        SwitchSection(Section.Services);
-        await _serviceCatalogView.RefreshAsync();
-    }
+        if (_session.HasPermission(Permission.ManageServices))
+            await _serviceCatalogView.RefreshAsync();
 
-    private async void BtnStock_Click(object sender, RoutedEventArgs e)
-    {
-        SwitchSection(Section.Stock);
-        await _stockView.RefreshAsync();
+        if (_session.HasPermission(Permission.ViewStock))
+            await _stockView.RefreshAsync();
     }
 
     /// <summary>Seule la zone blanche change : le menu lateral reste toujours affiche.</summary>
@@ -118,17 +120,10 @@ public partial class DashboardWindow : Window
         PaymentsContentHost.Visibility = section == Section.Payments ? Visibility.Visible : Visibility.Collapsed;
         StatisticsContentHost.Visibility = section == Section.Statistics ? Visibility.Visible : Visibility.Collapsed;
         UsersContentHost.Visibility = section == Section.Users ? Visibility.Visible : Visibility.Collapsed;
-        ProcessingContentHost.Visibility = section == Section.Processing ? Visibility.Visible : Visibility.Collapsed;
-        ServicesContentHost.Visibility = section == Section.Services ? Visibility.Visible : Visibility.Collapsed;
-        StockContentHost.Visibility = section == Section.Stock ? Visibility.Visible : Visibility.Collapsed;
-
         SetNavState(BtnDashboard, section == Section.Home);
         SetNavState(BtnPayments, section == Section.Payments);
         SetNavState(BtnStatistics, section == Section.Statistics);
         SetNavState(BtnUsers, section == Section.Users);
-        SetNavState(BtnProcessing, section == Section.Processing);
-        SetNavState(BtnServices, section == Section.Services);
-        SetNavState(BtnStock, section == Section.Stock);
     }
 
     private void SetNavState(Button button, bool isActive)
