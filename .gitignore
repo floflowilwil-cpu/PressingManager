@@ -490,3 +490,6 @@ $RECYCLE.BIN/
 *.db
 *.db-shm
 *.db-wal
+
+# Chaine de connexion PostgreSQL locale (contient le mot de passe de la base) : ne jamais commiter
+appsettings.local.json

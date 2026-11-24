@@ -1,0 +1,16 @@
+# PostgreSQL local pour le developpement : docker compose up -d
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pressingmanager
+      POSTGRES_USER: pressing
+      POSTGRES_PASSWORD: pressing_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pressing_pgdata:/var/lib/postgresql/data
+
+volumes:
+  pressing_pgdata:

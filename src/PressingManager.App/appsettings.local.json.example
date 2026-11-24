@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "Pressing": "Host=VOTRE_HOTE;Port=5432;Database=pressingmanager;Username=VOTRE_UTILISATEUR;Password=VOTRE_MOT_DE_PASSE;SSL Mode=Require"
+  }
+}

@@ -24,8 +24,11 @@ public partial class ReportsView : UserControl
     }
 
     /// <summary>Recharge les chiffres (sans effet si l'utilisateur n'a pas le droit ViewReports).</summary>
-    public Task RefreshAsync() =>
-        _viewModel.CanViewReports ? _viewModel.RefreshDataAsync() : Task.CompletedTask;
+    public Task RefreshAsync()
+    {
+        _viewModel.RefreshPermissions();
+        return _viewModel.CanViewReports ? _viewModel.RefreshDataAsync() : Task.CompletedTask;
+    }
 
     private void BtnExport_Click(object sender, RoutedEventArgs e)
     {
