@@ -329,6 +329,15 @@ public sealed class OrderService : IOrderService
             throw new BusinessRuleException("Client introuvable ou désactivé.");
         }
 
+        // Chaque ligne doit référencer un service actif du catalogue (clé étrangère OrderItems -> Services).
+        var serviceIds = items.Select(i => i.ServiceId).Distinct().ToList();
+        var activeServices = await db.Services.AsNoTracking()
+            .CountAsync(s => serviceIds.Contains(s.Id) && s.IsActive, cancellationToken);
+        if (activeServices != serviceIds.Count)
+        {
+            throw new BusinessRuleException("Un des services sélectionnés est introuvable ou désactivé.");
+        }
+
         // Préfixe du jour, ex. "CMD-20261123-" (on retire les 4 chiffres de la séquence).
         var datePrefix = NumberGenerator.OrderNumber(now.Date, 1);
         datePrefix = datePrefix.Substring(0, datePrefix.Length - 4);

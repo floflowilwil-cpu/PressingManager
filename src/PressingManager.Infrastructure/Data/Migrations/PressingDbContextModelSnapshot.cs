@@ -281,6 +281,8 @@ namespace PressingManager.Infrastructure.Data.Migrations
 
                     b.HasIndex("OrderId");
 
+                    b.HasIndex("ServiceId");
+
                     b.ToTable("OrderItems", (string)null);
                 });
 
@@ -584,6 +586,12 @@ namespace PressingManager.Infrastructure.Data.Migrations
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PressingManager.Core.Entities.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Order");

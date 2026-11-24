@@ -20,7 +20,11 @@ public class OrderProcessingServiceTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
-    private OrderProcessingService CreateService() => new(_db, _clock);
+    private OrderProcessingService CreateService()
+    {
+        var session = ProcessingTestSession.SignedIn(userId: _userId);
+        return new(_db, session, new AuditService(_db, session, _clock), _clock);
+    }
 
     private async Task Move(OrderProcessingService service, int orderId, params OrderStatus[] statuses)
     {

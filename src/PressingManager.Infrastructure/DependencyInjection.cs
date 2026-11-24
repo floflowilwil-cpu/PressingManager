@@ -21,10 +21,6 @@ public static class DependencyInjection
             options.UseSqlite($"Data Source={databasePath}")
                    .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
-        // DbContext scoped expose pour les services du module P3 qui en ont besoin
-        services.AddScoped<Microsoft.EntityFrameworkCore.DbContext>(sp =>
-            sp.GetRequiredService<IDbContextFactory<PressingDbContext>>().CreateDbContext());
-
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher>(_ => new Pbkdf2PasswordHasher());
         services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
@@ -46,8 +42,6 @@ public static class DependencyInjection
         services.AddSingleton<IPaymentService, PaymentService>();
         services.AddSingleton<IExpenseService, ExpenseService>();
         services.AddSingleton<ICashService, CashService>();
-        // Module traitement, services, tarifs et stocks (Personne 3)
-        services.AddProcessingAndInventoryServices();
 
         // Module traitement, services, tarifs et stocks (Personne 3)
         services.AddProcessingAndInventoryServices();
