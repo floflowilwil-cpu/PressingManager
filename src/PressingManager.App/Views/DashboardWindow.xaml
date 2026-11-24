@@ -119,8 +119,10 @@
                                FontWeight="SemiBold"
                                Margin="22,0,0,15"/>
 
-                    <Button Content="Tableau de bord"
-                            Style="{StaticResource ActiveSidebarButton}"/>
+                    <Button x:Name="BtnDashboard"
+                            Content="Tableau de bord"
+                            Style="{StaticResource ActiveSidebarButton}"
+                            Click="BtnDashboard_Click"/>
 
                     <Button Content="Clients"
                             Style="{StaticResource SidebarButton}"/>
@@ -131,8 +133,10 @@
                     <Button Content="Vêtements"
                             Style="{StaticResource SidebarButton}"/>
 
-                    <Button Content="Paiements"
-                            Style="{StaticResource SidebarButton}"/>
+                    <Button x:Name="BtnPayments"
+                            Content="Paiements"
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnPayments_Click"/>
 
                     <Button Content="Statistiques"
                             Style="{StaticResource SidebarButton}"/>
@@ -151,7 +155,7 @@
         </Border>
 
         <!-- CONTENU PRINCIPAL -->
-        <Grid Grid.Column="1" Margin="32">
+        <Grid x:Name="DashboardHomeContent" Grid.Column="1" Margin="32">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -281,5 +285,8 @@
             </Border>
 
         </Grid>
+
+        <!-- MODULE PAIEMENTS, CAISSE ET DEPENSES (Personne 4) -->
+        <ContentControl x:Name="PaymentsContentHost" Grid.Column="1" Visibility="Collapsed"/>
     </Grid>
 </Window>
