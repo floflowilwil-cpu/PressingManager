@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using PressingManager.Core.Interfaces;
 using PressingManager.Infrastructure.Data;
@@ -10,16 +11,29 @@ namespace PressingManager.Infrastructure;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Enregistre la base PostgreSQL (partagee entre tous les postes) et les services de l'infrastructure.
+    /// Enregistre la base PostgreSQL (partagee entre tous les postes) ou SQLite locale en secours,
+    /// ainsi que les services de l'infrastructure.
     /// Un IDbContextFactory est utilise (un contexte court par operation), ce qui convient a WPF.
-    /// Les autres membres ajoutent leurs services ici, a la suite.
     /// </summary>
     public static IServiceCollection AddPressingInfrastructure(this IServiceCollection services, string connectionString)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        NpgsqlSetup.Configure();
-        services.AddDbContextFactory<PressingDbContext>(options => options.UseNpgsql(connectionString));
+        bool useSqlite = connectionString.TrimStart().StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase);
+
+        if (useSqlite)
+        {
+            services.AddDbContextFactory<PressingDbContext>(options =>
+                options.UseSqlite(connectionString)
+                       .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+        }
+        else
+        {
+            NpgsqlSetup.Configure();
+            services.AddDbContextFactory<PressingDbContext>(options =>
+                options.UseNpgsql(connectionString)
+                       .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+        }
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher>(_ => new Pbkdf2PasswordHasher());

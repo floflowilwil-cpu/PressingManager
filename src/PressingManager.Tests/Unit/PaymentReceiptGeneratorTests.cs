@@ -118,4 +118,79 @@ public class PaymentReceiptGeneratorTests
             }
         }
     }
+
+    [Theory]
+    [InlineData(PaymentMethod.Cash, "Cash")]
+    [InlineData(PaymentMethod.MtnMobileMoney, "MTN Mobile Money")]
+    [InlineData(PaymentMethod.OrangeMoney, "Orange Money")]
+    [InlineData(PaymentMethod.Other, "Other")]
+    public void GetMethodLabel_ReturnsEnglishLabel_WhenIsEnglishTrue(PaymentMethod method, string expected)
+    {
+        Assert.Equal(expected, PaymentReceiptGenerator.GetMethodLabel(method, isEnglish: true));
+    }
+
+    [Theory]
+    [InlineData(PaymentStatus.Valid, "Validated")]
+    [InlineData(PaymentStatus.Cancelled, "Cancelled")]
+    [InlineData(PaymentStatus.Refunded, "Refunded")]
+    public void GetStatusLabel_ReturnsEnglishLabel_WhenIsEnglishTrue(PaymentStatus status, string expected)
+    {
+        Assert.Equal(expected, PaymentReceiptGenerator.GetStatusLabel(status, isEnglish: true));
+    }
+
+    [Fact]
+    public void FormatTextReceipt_WithEnglishEnabled_OutputsEnglishLabelsAndStatus()
+    {
+        var fullPayment = CreateSamplePayment(30, PaymentMethod.Cash, 5000m, "CASH-30");
+        var fullReceipt = PaymentReceiptGenerator.BuildReceipt(
+            fullPayment, "CMD-20261124-0012", "John Doe", 5000m, 5000m, "Paul Cashier");
+
+        var englishFull = PaymentReceiptGenerator.FormatTextReceipt(fullReceipt, isEnglish: true);
+
+        Assert.Contains("OFFICIAL PAYMENT RECEIPT", englishFull);
+        Assert.Contains("Receipt No.", englishFull);
+        Assert.Contains("Method        : Cash", englishFull);
+        Assert.Contains("Order total   : 5,000.00", englishFull);
+        Assert.Contains("PAID IN FULL", englishFull);
+        Assert.Contains("Thank you for your business!", englishFull);
+        Assert.DoesNotContain("RECU OFFICIEL", englishFull);
+        Assert.DoesNotContain("Espèces", englishFull);
+
+        var partialReceipt = PaymentReceiptGenerator.BuildReceipt(
+            fullPayment with { Amount = 2000m }, "CMD-20261124-0012", "John Doe", 5000m, 2000m, "Paul Cashier");
+
+        var englishPartial = PaymentReceiptGenerator.FormatTextReceipt(partialReceipt, isEnglish: true);
+
+        Assert.Contains("PARTIAL PAYMENT", englishPartial);
+        Assert.Contains("Balance due   : 3,000.00", englishPartial);
+    }
+
+    [Fact]
+    public void BuildReceiptPdfBytes_WithEnglishEnabled_ReturnsValidPdfBytes()
+    {
+        var payment = CreateSamplePayment(31, PaymentMethod.Cash, 2500m, reference: null);
+        var receipt = PaymentReceiptGenerator.BuildReceipt(
+            payment, "CMD-20261124-0015", "Jane Doe", 5000m, 2500m, "Paul Cashier");
+
+        var pdfBytes = PaymentReceiptPdfBuilder.BuildReceiptPdfBytes(receipt, isEnglish: true);
+
+        Assert.NotNull(pdfBytes);
+        Assert.True(pdfBytes.Length > 500);
+        Assert.Equal("%PDF", Encoding.ASCII.GetString(pdfBytes, 0, 4));
+    }
+
+    private static PaymentDto CreateSamplePayment(int id, PaymentMethod method, decimal amount, string? reference) =>
+        new(
+            Id: id,
+            OrderId: 12,
+            Amount: amount,
+            PaidAt: new DateTime(2026, 11, 24, 10, 15, 0, DateTimeKind.Utc),
+            Method: method,
+            Reference: reference,
+            Status: PaymentStatus.Valid,
+            ReceivedByUserId: 1,
+            CashSessionId: null,
+            CancelReason: null,
+            CancelledByUserId: null,
+            CancelledAt: null);
 }
