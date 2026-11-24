@@ -44,7 +44,7 @@ public partial class PaymentReceiptWindow : Window
 
         if (dialog.ShowDialog(this) == true)
         {
-            PaymentReceiptPdfBuilder.BuildReceiptPdf(_receipt, dialog.FileName);
+            PaymentReceiptPdfBuilder.BuildReceiptPdf(_receipt, dialog.FileName, Loc.Instance.IsEnglish);
             MessageBox.Show(
                 this,
                 Loc.Instance["Receipt_PdfSuccessMsg"],
@@ -74,7 +74,7 @@ public partial class PaymentReceiptWindow : Window
 
         if (dialog.ShowDialog(this) == true)
         {
-            File.WriteAllText(dialog.FileName, PaymentReceiptGenerator.FormatTextReceipt(_receipt));
+            File.WriteAllText(dialog.FileName, PaymentReceiptGenerator.FormatTextReceipt(_receipt, Loc.Instance.IsEnglish));
             MessageBox.Show(
                 this,
                 Loc.Instance["Receipt_TxtSuccessMsg"],

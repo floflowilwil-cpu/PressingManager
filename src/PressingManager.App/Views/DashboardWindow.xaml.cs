@@ -1,9 +1,8 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using PressingManager.App.Localization;
 using PressingManager.App.ViewModels;
+using PressingManager.App.Views;
 using PressingManager.Core.Enums;
 using PressingManager.Core.Interfaces;
 
@@ -39,16 +38,12 @@ public partial class DashboardWindow : Window
         StatisticsContentHost.Content = _reportsView;
         UsersContentHost.Content = _userManagementView;
 
-        Loc.Instance.LanguageChanged += OnLanguageChanged;
-        Closed += (_, _) => Loc.Instance.LanguageChanged -= OnLanguageChanged;
-
         // La fenetre est creee avant la connexion : on lit les droits au moment ou elle s'affiche.
         // Confort visuel seulement : le vrai controle d'acces est fait dans les services.
         Loaded += (_, _) =>
         {
             BtnStatistics.Visibility = VisibleIf(session, Permission.ViewReports);
             BtnUsers.Visibility = VisibleIf(session, Permission.ManageUsers);
-            UpdateLanguageButtons();
         };
     }
 
@@ -78,31 +73,6 @@ public partial class DashboardWindow : Window
     {
         SwitchSection(Section.Users);
         await _userManagementView.RefreshAsync();
-    }
-
-    private void BtnFrench_Click(object sender, RoutedEventArgs e) =>
-        Loc.Instance.SetLanguage(AppLanguage.Fr);
-
-    private void BtnEnglish_Click(object sender, RoutedEventArgs e) =>
-        Loc.Instance.SetLanguage(AppLanguage.En);
-
-    private void OnLanguageChanged(object? sender, EventArgs e) =>
-        UpdateLanguageButtons();
-
-    private void UpdateLanguageButtons()
-    {
-        var activeBg = new SolidColorBrush(Color.FromRgb(8, 100, 217));
-        var idleBg = new SolidColorBrush(Color.FromRgb(23, 74, 117));
-        var idleFg = new SolidColorBrush(Color.FromRgb(214, 225, 239));
-        var english = Loc.Instance.IsEnglish;
-
-        BtnFrench.Background = english ? idleBg : activeBg;
-        BtnFrench.Foreground = english ? idleFg : Brushes.White;
-        BtnFrench.FontWeight = english ? FontWeights.Normal : FontWeights.Bold;
-
-        BtnEnglish.Background = english ? activeBg : idleBg;
-        BtnEnglish.Foreground = english ? Brushes.White : idleFg;
-        BtnEnglish.FontWeight = english ? FontWeights.Bold : FontWeights.Normal;
     }
 
     /// <summary>Seule la zone blanche change : le menu lateral reste toujours affiche.</summary>
