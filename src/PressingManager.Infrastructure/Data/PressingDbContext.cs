@@ -36,4 +36,14 @@ public class PressingDbContext : DbContext
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PressingDbContext).Assembly);
     }
+        // Module traitement, services, tarifs et stocks (Personne 3)
+    public DbSet<Service> Services => Set<Service>();
+
+    public DbSet<ServicePrice> ServicePrices => Set<ServicePrice>();
+
+    public DbSet<Product> Products => Set<Product>();
+
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+
+    public DbSet<OrderStatusHistory> OrderStatusHistory => Set<OrderStatusHistory>();
 }
