@@ -13,7 +13,6 @@
 
     <Window.Resources>
 
-        <!-- STYLE DES BOUTONS DU MENU LATERAL -->
         <Style x:Key="SidebarButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#D6E1EF"/>
@@ -41,8 +40,6 @@
                         </Border>
 
                         <ControlTemplate.Triggers>
-
-                            <!-- SURVOL -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ButtonBorder"
                                         Property="Background"
@@ -51,7 +48,6 @@
                                         Value="White"/>
                             </Trigger>
 
-                            <!-- CLIC -->
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="ButtonBorder"
                                         Property="Background"
@@ -60,18 +56,15 @@
                                         Value="White"/>
                             </Trigger>
 
-                            <!-- BOUTON DESACTIVE -->
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.5"/>
                             </Trigger>
-
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- STYLE DU BOUTON ACTIF -->
         <Style x:Key="ActiveSidebarButton"
                TargetType="Button"
                BasedOn="{StaticResource SidebarButton}">
@@ -160,7 +153,10 @@
         </Border>
 
         <!-- CONTENU PRINCIPAL -->
-        <Grid x:Name="DashboardHomeContent" Grid.Column="1" Margin="32">
+        <Grid x:Name="DashboardHomeContent"
+              Grid.Column="1"
+              Margin="32">
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -190,6 +186,7 @@
             <!-- CARTES STATISTIQUES -->
             <UniformGrid Grid.Row="2" Columns="4" Margin="0,0,0,25">
 
+                <!-- CLIENTS -->
                 <Border Background="White"
                         CornerRadius="10"
                         Padding="18"
@@ -199,17 +196,21 @@
                                    Foreground="#718096"
                                    FontSize="11"
                                    FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
+
+                        <TextBlock x:Name="TxtCustomerCount"
+                                   Text="—"
                                    Foreground="#12365D"
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Margin="0,10,0,0"/>
-                        <TextBlock Text="Total des clients"
+
+                        <TextBlock Text="Total des clients actifs"
                                    Foreground="#718096"
                                    FontSize="11"/>
                     </StackPanel>
                 </Border>
 
+                <!-- COMMANDES -->
                 <Border Background="White"
                         CornerRadius="10"
                         Padding="18"
@@ -219,17 +220,21 @@
                                    Foreground="#718096"
                                    FontSize="11"
                                    FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
+
+                        <TextBlock x:Name="TxtOrderCount"
+                                   Text="—"
                                    Foreground="#0864D9"
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Margin="0,10,0,0"/>
+
                         <TextBlock Text="Total des commandes"
                                    Foreground="#718096"
                                    FontSize="11"/>
                     </StackPanel>
                 </Border>
 
+                <!-- COMMANDES EN COURS -->
                 <Border Background="White"
                         CornerRadius="10"
                         Padding="18"
@@ -239,17 +244,21 @@
                                    Foreground="#718096"
                                    FontSize="11"
                                    FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
+
+                        <TextBlock x:Name="TxtOrdersInProgress"
+                                   Text="—"
                                    Foreground="#08A6B5"
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Margin="0,10,0,0"/>
+
                         <TextBlock Text="Commandes en cours"
                                    Foreground="#718096"
                                    FontSize="11"/>
                     </StackPanel>
                 </Border>
 
+                <!-- REVENUS -->
                 <Border Background="White"
                         CornerRadius="10"
                         Padding="18">
@@ -258,12 +267,15 @@
                                    Foreground="#718096"
                                    FontSize="11"
                                    FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
+
+                        <TextBlock x:Name="TxtRevenueToday"
+                                   Text="—"
                                    Foreground="#16845B"
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Margin="0,10,0,0"/>
-                        <TextBlock Text="Revenus enregistrés"
+
+                        <TextBlock Text="Revenus encaissés aujourd'hui"
                                    Foreground="#718096"
                                    FontSize="11"/>
                     </StackPanel>
@@ -291,13 +303,20 @@
 
         </Grid>
 
-        <!-- MODULE PAIEMENTS, CAISSE ET DEPENSES (Personne 4) -->
-        <ContentControl x:Name="PaymentsContentHost" Grid.Column="1" Visibility="Collapsed"/>
+        <!-- MODULE PAIEMENTS -->
+        <ContentControl x:Name="PaymentsContentHost"
+                        Grid.Column="1"
+                        Visibility="Collapsed"/>
 
-        <!-- MODULE RAPPORTS ET STATISTIQUES (Personne 5) : meme zone blanche, le menu reste visible -->
-        <ContentControl x:Name="StatisticsContentHost" Grid.Column="1" Visibility="Collapsed"/>
+        <!-- MODULE STATISTIQUES -->
+        <ContentControl x:Name="StatisticsContentHost"
+                        Grid.Column="1"
+                        Visibility="Collapsed"/>
 
-        <!-- MODULE UTILISATEURS (Personne 5) : meme zone blanche -->
-        <ContentControl x:Name="UsersContentHost" Grid.Column="1" Visibility="Collapsed"/>
+        <!-- MODULE UTILISATEURS -->
+        <ContentControl x:Name="UsersContentHost"
+                        Grid.Column="1"
+                        Visibility="Collapsed"/>
+
     </Grid>
 </Window>
