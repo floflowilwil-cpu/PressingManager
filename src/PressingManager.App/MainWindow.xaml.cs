@@ -4,35 +4,42 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using PressingManager.App.ViewModels;
+using PressingManager.App.Views;
 
 namespace PressingManager.App
 {
     public partial class MainWindow : Window
     {
         private readonly LoginViewModel _viewModel;
+        private readonly DashboardWindow _dashboardWindow;
 
-        public MainWindow(LoginViewModel viewModel)
+        public MainWindow(
+            LoginViewModel viewModel,
+            DashboardWindow dashboardWindow)
         {
             InitializeComponent();
 
             _viewModel = viewModel;
+            _dashboardWindow = dashboardWindow;
 
             DataContext = _viewModel;
 
             _viewModel.LoginSucceeded += OnLoginSucceeded;
 
             Loaded += async (_, _) =>
+            {
                 await _viewModel.InitializeAsync();
+            };
         }
 
         // CONNEXION REUSSIE
         private void OnLoginSucceeded(object? sender, EventArgs e)
         {
-            MessageBox.Show(
-                "Connexion réussie !",
-                "Pressing Manager",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            Application.Current.MainWindow = _dashboardWindow;
+
+            _dashboardWindow.Show();
+
+            Close();
         }
 
         // BOUTON DE CONNEXION
