@@ -113,6 +113,40 @@
                                Margin="0,2,0,0"/>
                 </StackPanel>
 
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,18">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                        <Button x:Name="BtnFrench"
+                                Content="FR"
+                                Click="BtnFrench_Click"
+                                Width="52"
+                                Height="30"
+                                Background="#0864D9"
+                                Foreground="White"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                Margin="0,0,6,0"/>
+
+                        <Button x:Name="BtnEnglish"
+                                Content="EN"
+                                Click="BtnEnglish_Click"
+                                Width="52"
+                                Height="30"
+                                Background="#174A75"
+                                Foreground="#D6E1EF"
+                                FontSize="12"
+                                FontWeight="Normal"
+                                BorderThickness="0"
+                                Cursor="Hand"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Pressing Manager © 2026"
+                               Foreground="#91A8C2"
+                               FontSize="11"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
                 <StackPanel>
                     <TextBlock Text="{loc:T Nav_MainMenu}"
                                Foreground="#91A8C2"
@@ -149,13 +183,6 @@
                             Style="{StaticResource SidebarButton}"
                             Click="BtnUsers_Click"/>
                 </StackPanel>
-
-                <TextBlock DockPanel.Dock="Bottom"
-                           Text="Pressing Manager © 2026"
-                           Foreground="#91A8C2"
-                           FontSize="11"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,20"/>
             </DockPanel>
         </Border>
 

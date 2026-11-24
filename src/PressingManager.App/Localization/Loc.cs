@@ -47,6 +47,10 @@ public sealed class Loc : INotifyPropertyChanged
 
     public string Role(UserRole role) => this[$"Role_{role}"];
 
+    public string PaymentMethod(PaymentMethod method) => this[$"PayMethod_{method}"];
+
+    public string PaymentStatus(PaymentStatus status) => this[$"PayStatus_{status}"];
+
     public void SetLanguage(AppLanguage language)
     {
         if (language == _language)

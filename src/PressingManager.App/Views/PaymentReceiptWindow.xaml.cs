@@ -1,7 +1,9 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using PressingManager.App.Localization;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
@@ -16,21 +18,28 @@ namespace PressingManager.App.Views;
 public partial class PaymentReceiptWindow : Window
 {
     private readonly PaymentReceiptDto _receipt;
+    private readonly ReceiptViewModel _viewModel;
 
     public PaymentReceiptWindow(PaymentReceiptDto receipt)
     {
         InitializeComponent();
         _receipt = receipt ?? throw new ArgumentNullException(nameof(receipt));
-        DataContext = new ReceiptViewModel(receipt);
+        _viewModel = new ReceiptViewModel(receipt);
+        DataContext = _viewModel;
+
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
+        Closed += (_, _) => Loc.Instance.LanguageChanged -= OnLanguageChanged;
     }
+
+    private void OnLanguageChanged(object? sender, EventArgs e) => _viewModel.RefreshTranslations();
 
     private void SavePdfButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new SaveFileDialog
         {
             FileName = $"{_receipt.ReceiptNumber}.pdf",
-            Filter = "Document PDF (*.pdf)|*.pdf",
-            Title = "Enregistrer le reçu en PDF"
+            Filter = Loc.Instance["Receipt_SavePdfFilter"],
+            Title = Loc.Instance["Receipt_SavePdfTitle"]
         };
 
         if (dialog.ShowDialog(this) == true)
@@ -38,8 +47,8 @@ public partial class PaymentReceiptWindow : Window
             PaymentReceiptPdfBuilder.BuildReceiptPdf(_receipt, dialog.FileName);
             MessageBox.Show(
                 this,
-                "Le reçu PDF a été généré avec succès.",
-                "PDF généré",
+                Loc.Instance["Receipt_PdfSuccessMsg"],
+                Loc.Instance["Receipt_PdfSuccessTitle"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -50,7 +59,7 @@ public partial class PaymentReceiptWindow : Window
         var dialog = new PrintDialog();
         if (dialog.ShowDialog() == true)
         {
-            dialog.PrintVisual(ReceiptVisual, $"Recu {_receipt.ReceiptNumber}");
+            dialog.PrintVisual(ReceiptVisual, Loc.Instance.Format("Receipt_PrintJobName", _receipt.ReceiptNumber));
         }
     }
 
@@ -59,8 +68,8 @@ public partial class PaymentReceiptWindow : Window
         var dialog = new SaveFileDialog
         {
             FileName = $"{_receipt.ReceiptNumber}.txt",
-            Filter = "Fichier texte (*.txt)|*.txt",
-            Title = "Exporter le reçu de paiement"
+            Filter = Loc.Instance["Receipt_SaveTxtFilter"],
+            Title = Loc.Instance["Receipt_SaveTxtTitle"]
         };
 
         if (dialog.ShowDialog(this) == true)
@@ -68,8 +77,8 @@ public partial class PaymentReceiptWindow : Window
             File.WriteAllText(dialog.FileName, PaymentReceiptGenerator.FormatTextReceipt(_receipt));
             MessageBox.Show(
                 this,
-                "Le reçu a été exporté avec succès.",
-                "Export réussi",
+                Loc.Instance["Receipt_TxtSuccessMsg"],
+                Loc.Instance["Receipt_TxtSuccessTitle"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -77,7 +86,7 @@ public partial class PaymentReceiptWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
-    private sealed class ReceiptViewModel
+    private sealed class ReceiptViewModel : INotifyPropertyChanged
     {
         public ReceiptViewModel(PaymentReceiptDto receipt)
         {
@@ -86,7 +95,6 @@ public partial class PaymentReceiptWindow : Window
             CustomerName = receipt.CustomerName;
             OrderNumber = receipt.OrderNumber;
             Method = receipt.Method;
-            MethodLabel = receipt.MethodLabel;
             CashierName = receipt.CashierName;
             Reference = receipt.Reference;
             OrderTotal = receipt.OrderTotal;
@@ -96,12 +104,13 @@ public partial class PaymentReceiptWindow : Window
             IsFullyPaid = receipt.IsFullyPaid;
         }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
+
         public string ReceiptNumber { get; }
         public DateTime PaidAtLocal { get; }
         public string CustomerName { get; }
         public string OrderNumber { get; }
         public PaymentMethod Method { get; }
-        public string MethodLabel { get; }
         public string CashierName { get; }
         public string? Reference { get; }
         public bool HasReference => !string.IsNullOrWhiteSpace(Reference);
@@ -110,5 +119,20 @@ public partial class PaymentReceiptWindow : Window
         public decimal TotalPaidOnOrder { get; }
         public decimal RemainingBalance { get; }
         public bool IsFullyPaid { get; }
+
+        public string MethodLabel => Loc.Instance.PaymentMethod(Method);
+
+        public string StatusBadgeText => Loc.Instance[IsFullyPaid ? "Receipt_StatusPaid" : "Receipt_StatusPartial"];
+
+        public string RecordedOnText => Loc.Instance.Format(
+            "Receipt_RecordedOn",
+            PaidAtLocal.ToString("dd/MM/yyyy HH:mm", Loc.Instance.Culture));
+
+        public void RefreshTranslations()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MethodLabel)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusBadgeText)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RecordedOnText)));
+        }
     }
 }
