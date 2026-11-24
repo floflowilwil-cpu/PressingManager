@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:enums="clr-namespace:PressingManager.Core.Enums;assembly=PressingManager.Core"
         Title="Confirmation &amp; Reçu de Paiement"
-        Width="490" SizeToContent="Height"
+        Width="540" SizeToContent="Height"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
         Background="#F4F6F9">
     <Window.Resources>
@@ -269,36 +269,42 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Button Grid.Column="0" Background="#0F2A4A" Style="{StaticResource RoundedButton}" Margin="0,0,8,0"
-                        Click="PrintButton_Click">
+                        Click="SavePdfButton_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Viewbox Width="16" Height="16" Margin="0,0,8,0">
-                            <Canvas Width="24" Height="24">
-                                <Path Stroke="White" StrokeThickness="2" StrokeLineJoin="Round"
-                                      Data="M6,9 L6,3 L18,3 L18,9 M6,18 L4,18 C2.9,18 2,17.1 2,16 L2,11 C2,9.9 2.9,9 4,9 L20,9 C21.1,9 22,9.9 22,11 L22,16 C22,17.1 21.1,18 20,18 L18,18 M6,14 L18,14 L18,21 L6,21 Z" />
-                            </Canvas>
-                        </Viewbox>
-                        <TextBlock Text="Imprimer / PDF" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-
-                <Button Grid.Column="1" Background="#14B8A6" Style="{StaticResource RoundedButton}" Margin="0,0,8,0"
-                        Click="SaveTextButton_Click">
-                    <StackPanel Orientation="Horizontal">
-                        <Viewbox Width="16" Height="16" Margin="0,0,8,0">
+                        <Viewbox Width="15" Height="15" Margin="0,0,6,0">
                             <Canvas Width="24" Height="24">
                                 <Path Stroke="White" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                                       Data="M12,3 L12,15 M7,10 L12,15 L17,10 M4,17 L4,20 L20,20 L20,17" />
                             </Canvas>
                         </Viewbox>
-                        <TextBlock Text="Exporter (.txt)" VerticalAlignment="Center" />
+                        <TextBlock Text="Télécharger PDF" VerticalAlignment="Center" FontSize="12" />
                     </StackPanel>
                 </Button>
 
-                <Button Grid.Column="2" Content="Fermer" Background="#64748B" Style="{StaticResource RoundedButton}"
+                <Button Grid.Column="1" Background="#0864D9" Style="{StaticResource RoundedButton}" Margin="0,0,8,0"
+                        Click="PrintButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="15" Height="15" Margin="0,0,6,0">
+                            <Canvas Width="24" Height="24">
+                                <Path Stroke="White" StrokeThickness="2" StrokeLineJoin="Round"
+                                      Data="M6,9 L6,3 L18,3 L18,9 M6,18 L4,18 C2.9,18 2,17.1 2,16 L2,11 C2,9.9 2.9,9 4,9 L20,9 C21.1,9 22,9.9 22,11 L22,16 C22,17.1 21.1,18 20,18 L18,18 M6,14 L18,14 L18,21 L6,21 Z" />
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Text="Imprimer" VerticalAlignment="Center" FontSize="12" />
+                    </StackPanel>
+                </Button>
+
+                <Button Grid.Column="2" Background="#14B8A6" Style="{StaticResource RoundedButton}" Margin="0,0,8,0"
+                        Click="SaveTextButton_Click">
+                    <TextBlock Text="Texte (.txt)" VerticalAlignment="Center" FontSize="12" />
+                </Button>
+
+                <Button Grid.Column="3" Content="Fermer" Background="#64748B" Style="{StaticResource RoundedButton}"
                         Click="CloseButton_Click" />
             </Grid>
 

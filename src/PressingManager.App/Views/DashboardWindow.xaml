@@ -40,7 +40,8 @@
                                FontWeight="SemiBold"
                                Margin="22,0,0,15"/>
 
-                    <Button Content="Tableau de bord"
+                    <Button x:Name="BtnDashboard"
+                            Content="Tableau de bord"
                             Background="#0864D9"
                             Foreground="White"
                             FontSize="14"
@@ -48,6 +49,8 @@
                             HorizontalContentAlignment="Left"
                             Padding="20,14"
                             BorderThickness="0"
+                            Cursor="Hand"
+                            Click="BtnDashboard_Click"
                             Margin="10,0,10,8"/>
 
                     <Button Content="Clients"
@@ -77,13 +80,16 @@
                             BorderThickness="0"
                             Margin="10,0,10,8"/>
 
-                    <Button Content="Paiements"
+                    <Button x:Name="BtnPayments"
+                            Content="Paiements"
                             Background="Transparent"
                             Foreground="#D6E1EF"
                             FontSize="14"
                             HorizontalContentAlignment="Left"
                             Padding="20,14"
                             BorderThickness="0"
+                            Cursor="Hand"
+                            Click="BtnPayments_Click"
                             Margin="10,0,10,8"/>
 
                     <Button Content="Statistiques"
@@ -115,7 +121,7 @@
         </Border>
 
         <!-- CONTENU PRINCIPAL -->
-        <Grid Grid.Column="1" Margin="32">
+        <Grid x:Name="DashboardHomeContent" Grid.Column="1" Margin="32">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -245,5 +251,8 @@
             </Border>
 
         </Grid>
+
+        <!-- MODULE PAIEMENTS, CAISSE ET DEPENSES (Personne 4) -->
+        <ContentControl x:Name="PaymentsContentHost" Grid.Column="1" Visibility="Collapsed"/>
     </Grid>
 </Window>

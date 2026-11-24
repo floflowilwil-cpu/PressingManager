@@ -1,6 +1,8 @@
+using System.Text;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
+using PressingManager.Infrastructure.Services;
 
 namespace PressingManager.Tests.Unit;
 
@@ -76,5 +78,44 @@ public class PaymentReceiptGeneratorTests
             payment, "CMD-20261123-0005", "Marie Claire", 10000m, 10000m, "Paul Caissier");
         Assert.True(full.IsFullyPaid);
         Assert.Contains("SOLDE", PaymentReceiptGenerator.FormatTextReceipt(full));
+    }
+
+    [Fact]
+    public void BuildReceiptPdf_WritesValidPdfFileWithQuestPdf()
+    {
+        var payment = new PaymentDto(
+            Id: 21,
+            OrderId: 9,
+            Amount: 5000m,
+            PaidAt: new DateTime(2026, 11, 24, 9, 0, 0, DateTimeKind.Utc),
+            Method: PaymentMethod.OrangeMoney,
+            Reference: "OM-7788",
+            Status: PaymentStatus.Valid,
+            ReceivedByUserId: 1,
+            CashSessionId: null,
+            CancelReason: null,
+            CancelledByUserId: null,
+            CancelledAt: null);
+
+        var receipt = PaymentReceiptGenerator.BuildReceipt(
+            payment, "CMD-20261124-0009", "Awa Nkodo", 5000m, 5000m, "Paul Caissier");
+
+        var tempPdfPath = Path.Combine(Path.GetTempPath(), $"pressing-receipt-test-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            PaymentReceiptPdfBuilder.BuildReceiptPdf(receipt, tempPdfPath);
+
+            Assert.True(File.Exists(tempPdfPath));
+            var bytes = File.ReadAllBytes(tempPdfPath);
+            Assert.True(bytes.Length > 500);
+            Assert.Equal("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
+        }
+        finally
+        {
+            if (File.Exists(tempPdfPath))
+            {
+                File.Delete(tempPdfPath);
+            }
+        }
     }
 }
