@@ -124,6 +124,37 @@ await exportService.ExportOrdersPdfAsync(orders, path, "Commandes 01/11/2026 - 3
   ou si l'utilisateur n'a pas `ViewStock`, `StockAlerts` est vide.
 - Menu : afficher « Rapports » seulement si `session.HasPermission(Permission.ViewReports)`.
 
+## Mot de passe oublié
+
+L'application est hors ligne (pas d'e-mail ni de SMS), donc deux cas :
+
+- **Un employé oublie son mot de passe** : l'administrateur le réinitialise depuis la gestion des utilisateurs
+  (`IUserService.ResetPasswordAsync`, déjà en place).
+- **L'administrateur oublie le sien** (ou n'importe quel compte sans administrateur disponible) : **code de récupération**
+  à usage unique.
+  1. Générer : `IUserService.GenerateRecoveryCodeAsync(userId)` (permission `ManageUsers`). Retourne un code du type
+     `K7QM-2XWD-9PRT` **une seule fois** : l'afficher, le faire noter et le ranger en lieu sûr. Seul son hash est stocké.
+     À faire pour l'administrateur juste après la configuration initiale.
+  2. Utiliser : lien « Mot de passe oublié ? » sur l'écran de connexion, qui appelle
+     `IAuthService.ResetPasswordWithRecoveryCodeAsync(username, code, nouveauMotDePasse)`.
+- Le code est insensible à la casse, aux espaces et aux tirets, et ne sert qu'une fois (il faut en générer un nouveau).
+- Un mauvais code compte comme un échec de connexion : 5 échecs = compte verrouillé 5 minutes.
+- Identifiant inconnu, compte désactivé, compte sans code ou mauvais code : **même message** d'erreur.
+- Le code n'est jamais écrit dans le journal d'audit (actions `RecoveryCodeGenerated`, `RecoveryFailed`,
+  `PasswordResetWithRecoveryCode`).
+
+**Base de données** : nouvelle colonne `Users.RecoveryCodeHash` (texte, nullable). Après avoir récupéré le code :
+
+```
+dotnet ef migrations add AddUserRecoveryCode --project src/PressingManager.Infrastructure --startup-project src/PressingManager.App
+dotnet ef database update --project src/PressingManager.Infrastructure --startup-project src/PressingManager.App
+```
+
+Chaque membre de l'équipe lance ensuite `dotnet ef database update` après son `git pull` pour mettre à jour sa base locale.
+
+**Pour la Personne 1 (écrans)** : un lien « Mot de passe oublié ? » sur la connexion (identifiant, code, nouveau mot de passe
++ confirmation), et un bouton « Générer un code de récupération » dans la gestion des utilisateurs qui affiche le code une fois.
+
 ## Limites connues
 
 - Les rapports chargent les commandes en mémoire pour calculer les montants (SQLite ne sait pas additionner des `decimal`

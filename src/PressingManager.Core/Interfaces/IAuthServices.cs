@@ -45,6 +45,14 @@ public interface IAuthService
     Task<LoginResult> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
 
     Task LogoutAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// « Mot de passe oublié » sans e-mail (application hors ligne) : l'utilisateur saisit son identifiant,
+    /// le code de récupération remis par l'administrateur et un nouveau mot de passe.
+    /// Le code est à usage unique. Lève BusinessRuleException (même message si l'identifiant ou le code est faux).
+    /// </summary>
+    Task ResetPasswordWithRecoveryCodeAsync(
+        string username, string recoveryCode, string newPassword, CancellationToken cancellationToken = default);
 }
 
 public interface IUserService
@@ -59,6 +67,12 @@ public interface IUserService
 
     /// <summary>Reinitialisation par un administrateur (deverrouille aussi le compte).</summary>
     Task ResetPasswordAsync(int userId, string newPassword, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Génère un nouveau code de récupération (permission ManageUsers) et remplace l'ancien.
+    /// Le code en clair n'est retourné qu'ici, une seule fois : seul son hash est stocké.
+    /// </summary>
+    Task<string> GenerateRecoveryCodeAsync(int userId, CancellationToken cancellationToken = default);
 
     Task ChangeOwnPasswordAsync(
         string currentPassword, string newPassword, CancellationToken cancellationToken = default);

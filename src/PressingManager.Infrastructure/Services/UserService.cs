@@ -170,6 +170,25 @@ public sealed class UserService : IUserService
             cancellationToken: cancellationToken);
     }
 
+    public async Task<string> GenerateRecoveryCodeAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        _session.Require(Permission.ManageUsers);
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        var user = await LoadAsync(db, userId, cancellationToken);
+
+        var code = RecoveryCode.Generate();
+        user.RecoveryCodeHash = _hasher.Hash(RecoveryCode.Normalize(code));
+        await db.SaveChangesAsync(cancellationToken);
+
+        // Le code n'est jamais écrit dans le journal d'audit.
+        await _audit.LogAsync(
+            AuditActions.RecoveryCodeGenerated, nameof(User), user.Id.ToString(), user.Username,
+            cancellationToken: cancellationToken);
+
+        return code;
+    }
+
     public async Task ChangeOwnPasswordAsync(
         string currentPassword, string newPassword, CancellationToken cancellationToken = default)
     {
