@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using PressingManager.Core.Interfaces;
 using PressingManager.Infrastructure.Data;
@@ -16,7 +17,9 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddPressingInfrastructure(this IServiceCollection services, string databasePath)
     {
-        services.AddDbContextFactory<PressingDbContext>(options => options.UseSqlite($"Data Source={databasePath}"));
+        services.AddDbContextFactory<PressingDbContext>(options =>
+            options.UseSqlite($"Data Source={databasePath}")
+                   .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher>(_ => new Pbkdf2PasswordHasher());
