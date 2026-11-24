@@ -1,16 +1,12 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using PressingManager.App.ViewModels;
 
 namespace PressingManager.App.Views;
 
 public partial class DashboardWindow : Window
 {
-    private static readonly Brush ActiveBackground = new SolidColorBrush(Color.FromRgb(8, 100, 217));
-    private static readonly Brush InactiveText = new SolidColorBrush(Color.FromRgb(214, 225, 239));
-
     private readonly PaymentManagementView _paymentManagementView;
 
     public DashboardWindow(PaymentManagementView paymentManagementView)
@@ -43,10 +39,8 @@ public partial class DashboardWindow : Window
         SetNavState(BtnPayments, showPayments);
     }
 
-    private static void SetNavState(Button button, bool isActive)
+    private void SetNavState(Button button, bool isActive)
     {
-        button.Background = isActive ? ActiveBackground : Brushes.Transparent;
-        button.Foreground = isActive ? Brushes.White : InactiveText;
-        button.FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal;
+        button.Style = (Style)FindResource(isActive ? "ActiveSidebarButton" : "SidebarButton");
     }
 }

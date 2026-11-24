@@ -1,3 +1,4 @@
+
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PressingManager.Core.Common;
@@ -40,13 +41,29 @@ public partial class LoginViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(Subtitle), nameof(SubmitLabel))]
     private bool _isSetupMode;
 
-    public string Subtitle => IsSetupMode
-        ? "Première utilisation : créez le compte administrateur"
-        : "Connexion";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Subtitle), nameof(SubmitLabel))]
+    private bool _isEnglish;
 
-    public string SubmitLabel => IsSetupMode ? "Créer le compte et se connecter" : "Se connecter";
+    public string Subtitle => IsEnglish
+        ? (IsSetupMode
+            ? "First-time setup: create the administrator account"
+            : "Sign in")
+        : (IsSetupMode
+            ? "Première utilisation : créez le compte administrateur"
+            : "Connexion");
 
-    /// <summary>Levé quand l'utilisateur est connecté ; la fenêtre se ferme alors avec DialogResult = true.</summary>
+    public string SubmitLabel => IsEnglish
+        ? (IsSetupMode
+            ? "Create account and sign in"
+            : "Sign in")
+        : (IsSetupMode
+            ? "Créer le compte et se connecter"
+            : "Se connecter");
+
+    /// <summary>
+    /// Levé quand l'utilisateur est connecté.
+    /// </summary>
     public event EventHandler? LoginSucceeded;
 
     public async Task InitializeAsync()
@@ -82,7 +99,10 @@ public partial class LoginViewModel : ObservableObject
                     return;
                 }
 
-                await _auth.CreateInitialAdministratorAsync(FullName, Username, Password);
+                await _auth.CreateInitialAdministratorAsync(
+                    FullName,
+                    Username,
+                    Password);
             }
 
             var result = await _auth.LoginAsync(Username, Password);

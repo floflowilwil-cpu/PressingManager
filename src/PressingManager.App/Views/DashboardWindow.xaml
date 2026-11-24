@@ -10,6 +10,85 @@
         WindowStartupLocation="CenterScreen"
         Background="#F3F6FB">
 
+    <Window.Resources>
+
+        <!-- STYLE DES BOUTONS DU MENU LATERAL -->
+        <Style x:Key="SidebarButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#D6E1EF"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="20,14"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="10,0,10,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8">
+
+                            <ContentPresenter
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                RecognizesAccessKey="True"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <!-- SURVOL -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder"
+                                        Property="Background"
+                                        Value="#174A75"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
+                            </Trigger>
+
+                            <!-- CLIC -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder"
+                                        Property="Background"
+                                        Value="#0864D9"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
+                            </Trigger>
+
+                            <!-- BOUTON DESACTIVE -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- STYLE DU BOUTON ACTIF -->
+        <Style x:Key="ActiveSidebarButton"
+               TargetType="Button"
+               BasedOn="{StaticResource SidebarButton}">
+
+            <Setter Property="Background" Value="#0864D9"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#064DA8"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="240"/>
@@ -42,73 +121,28 @@
 
                     <Button x:Name="BtnDashboard"
                             Content="Tableau de bord"
-                            Background="#0864D9"
-                            Foreground="White"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            HorizontalContentAlignment="Left"
-                            Padding="20,14"
-                            BorderThickness="0"
-                            Cursor="Hand"
-                            Click="BtnDashboard_Click"
-                            Margin="10,0,10,8"/>
+                            Style="{StaticResource ActiveSidebarButton}"
+                            Click="BtnDashboard_Click"/>
 
                     <Button Content="Clients"
-                            Background="Transparent"
-                            Foreground="#D6E1EF"
-                            FontSize="14"
-                            HorizontalContentAlignment="Left"
-                            Padding="20,14"
-                            BorderThickness="0"
-                            Margin="10,0,10,8"/>
+                            Style="{StaticResource SidebarButton}"/>
 
                     <Button Content="Commandes"
-                            Background="Transparent"
-                            Foreground="#D6E1EF"
-                            FontSize="14"
-                            HorizontalContentAlignment="Left"
-                            Padding="20,14"
-                            BorderThickness="0"
-                            Margin="10,0,10,8"/>
+                            Style="{StaticResource SidebarButton}"/>
 
                     <Button Content="Vêtements"
-                            Background="Transparent"
-                            Foreground="#D6E1EF"
-                            FontSize="14"
-                            HorizontalContentAlignment="Left"
-                            Padding="20,14"
-                            BorderThickness="0"
-                            Margin="10,0,10,8"/>
+                            Style="{StaticResource SidebarButton}"/>
 
                     <Button x:Name="BtnPayments"
                             Content="Paiements"
-                            Background="Transparent"
-                            Foreground="#D6E1EF"
-                            FontSize="14"
-                            HorizontalContentAlignment="Left"
-                            Padding="20,14"
-                            BorderThickness="0"
-                            Cursor="Hand"
-                            Click="BtnPayments_Click"
-                            Margin="10,0,10,8"/>
+                            Style="{StaticResource SidebarButton}"
+                            Click="BtnPayments_Click"/>
 
                     <Button Content="Statistiques"
-                            Background="Transparent"
-                            Foreground="#D6E1EF"
-                            FontSize="14"
-                            HorizontalContentAlignment="Left"
-                            Padding="20,14"
-                            BorderThickness="0"
-                            Margin="10,0,10,8"/>
+                            Style="{StaticResource SidebarButton}"/>
 
                     <Button Content="Utilisateurs"
-                            Background="Transparent"
-                            Foreground="#D6E1EF"
-                            FontSize="14"
-                            HorizontalContentAlignment="Left"
-                            Padding="20,14"
-                            BorderThickness="0"
-                            Margin="10,0,10,8"/>
+                            Style="{StaticResource SidebarButton}"/>
                 </StackPanel>
 
                 <TextBlock DockPanel.Dock="Bottom"

@@ -20,11 +20,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\Images\PressingManagerIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Resources/Images/PressingManagerLogo.png" />
     <Resource Include="Resources/Images/PressingManager_FondGauche.png" />
+    <Resource Include="Resources/Images/PressingManagerIcon.ico" />
   </ItemGroup>
 
 </Project>
