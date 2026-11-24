@@ -5,6 +5,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using PressingManager.App.ViewModels;
 using PressingManager.Infrastructure;
+using PressingManager.App.Views;
 
 namespace PressingManager.App;
 
@@ -33,6 +34,7 @@ public partial class App : Application
             services.AddPressingInfrastructure(databasePath);
             services.AddTransient<LoginViewModel>();
             services.AddTransient<MainWindow>();
+            services.AddTransient<DashboardWindow>();
 
             _serviceProvider = services.BuildServiceProvider();
 
