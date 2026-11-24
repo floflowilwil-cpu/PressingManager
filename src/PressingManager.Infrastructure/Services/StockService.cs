@@ -4,6 +4,7 @@ using PressingManager.Core.DTOs;
 using PressingManager.Core.Entities;
 using PressingManager.Core.Enums;
 using PressingManager.Core.Interfaces;
+using PressingManager.Infrastructure.Data;
 
 namespace PressingManager.Infrastructure.Services;
 
@@ -18,20 +19,22 @@ public sealed class StockService : IStockService
     private const int UnitMaxLength = 20;
     private const int ReasonMaxLength = 250;
 
-    private readonly DbContext _db;
-    private readonly TimeProvider _clock;
+    private readonly IDbContextFactory<PressingDbContext> _dbFactory;
+    private readonly TimeProvider _time;
 
-    public StockService(DbContext db, TimeProvider? clock = null)
+    public StockService(IDbContextFactory<PressingDbContext> dbFactory, TimeProvider time)
     {
-        _db = db ?? throw new ArgumentNullException(nameof(db));
-        _clock = clock ?? TimeProvider.System;
+        _dbFactory = dbFactory;
+        _time = time;
     }
 
     public async Task<IReadOnlyList<ProductDto>> GetProductsAsync(
         bool includeInactive = false,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Product> query = _db.Set<Product>().AsNoTracking();
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        IQueryable<Product> query = db.Products.AsNoTracking();
 
         if (!includeInactive)
         {
@@ -39,7 +42,7 @@ public sealed class StockService : IStockService
         }
 
         var products = await query.OrderBy(p => p.Name).ToListAsync(cancellationToken);
-        var stocks = await GetStocksAsync(products.Select(p => p.Id).ToList(), cancellationToken);
+        var stocks = await GetStocksAsync(db, products.Select(p => p.Id).ToList(), cancellationToken);
 
         return products
             .Select(p => ToDto(p, stocks.TryGetValue(p.Id, out var stock) ? stock : 0m))
@@ -50,7 +53,9 @@ public sealed class StockService : IStockService
         int productId,
         CancellationToken cancellationToken = default)
     {
-        var product = await _db.Set<Product>()
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var product = await db.Products
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
 
@@ -59,7 +64,7 @@ public sealed class StockService : IStockService
             return null;
         }
 
-        var stock = await GetCurrentStockAsync(product.Id, cancellationToken);
+        var stock = await GetCurrentStockAsync(db, product.Id, cancellationToken);
         return ToDto(product, stock);
     }
 
@@ -73,7 +78,8 @@ public sealed class StockService : IStockService
         var unit = InputValidation.RequireText(request.Unit, "L'unité", UnitMaxLength);
         EnsureThresholdIsValid(request.AlertThreshold);
 
-        await EnsureNameIsAvailableAsync(name, ignoredProductId: null, cancellationToken);
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        await EnsureNameIsAvailableAsync(db, name, ignoredProductId: null, cancellationToken);
 
         var product = new Product
         {
@@ -83,8 +89,8 @@ public sealed class StockService : IStockService
             IsActive = true
         };
 
-        _db.Set<Product>().Add(product);
-        await _db.SaveChangesAsync(cancellationToken);
+        db.Products.Add(product);
+        await db.SaveChangesAsync(cancellationToken);
 
         return ToDto(product, 0m);
     }
@@ -99,18 +105,20 @@ public sealed class StockService : IStockService
         var unit = InputValidation.RequireText(request.Unit, "L'unité", UnitMaxLength);
         EnsureThresholdIsValid(request.AlertThreshold);
 
-        var product = await _db.Set<Product>()
-            .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
-            ?? throw new InvalidOperationException($"Le produit {request.Id} est introuvable.");
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
-        await EnsureNameIsAvailableAsync(name, product.Id, cancellationToken);
+        var product = await db.Products
+            .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken)
+            ?? throw new BusinessRuleException("Produit introuvable.");
+
+        await EnsureNameIsAvailableAsync(db, name, product.Id, cancellationToken);
 
         product.Name = name;
         product.Unit = unit;
         product.AlertThreshold = request.AlertThreshold;
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
-        var stock = await GetCurrentStockAsync(product.Id, cancellationToken);
+        var stock = await GetCurrentStockAsync(db, product.Id, cancellationToken);
         return ToDto(product, stock);
     }
 
@@ -122,32 +130,41 @@ public sealed class StockService : IStockService
 
         if (!Enum.IsDefined(request.Type))
         {
-            throw new ArgumentException("Le type de mouvement est inconnu.", nameof(request));
+            throw new BusinessRuleException("Le type de mouvement est inconnu.");
         }
 
         if (request.Quantity <= 0)
         {
-            throw new InvalidOperationException("La quantité doit être strictement positive.");
+            throw new BusinessRuleException("La quantité doit être strictement positive.");
         }
 
         var reason = InputValidation.OptionalText(request.Reason, "Le motif", ReasonMaxLength);
 
-        var product = await _db.Set<Product>()
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var product = await db.Products
             .FirstOrDefaultAsync(p => p.Id == request.ProductId, cancellationToken)
-            ?? throw new InvalidOperationException($"Le produit {request.ProductId} est introuvable.");
+            ?? throw new BusinessRuleException("Produit introuvable.");
 
         if (!product.IsActive)
         {
-            throw new InvalidOperationException($"Le produit « {product.Name} » est désactivé.");
+            throw new BusinessRuleException($"Le produit « {product.Name} » est désactivé.");
+        }
+
+        var userIsValid = await db.Users
+            .AnyAsync(u => u.Id == request.UserId && u.IsActive, cancellationToken);
+        if (!userIsValid)
+        {
+            throw new BusinessRuleException("Utilisateur introuvable ou désactivé.");
         }
 
         var removesStock = request.Type is StockMovementType.Exit or StockMovementType.AdjustmentDecrease;
         if (removesStock)
         {
-            var currentStock = await GetCurrentStockAsync(product.Id, cancellationToken);
+            var currentStock = await GetCurrentStockAsync(db, product.Id, cancellationToken);
             if (!StockCalculator.CanRemove(currentStock, request.Quantity))
             {
-                throw new InvalidOperationException(
+                throw new BusinessRuleException(
                     $"Stock insuffisant pour « {product.Name} » : {currentStock} {product.Unit} disponible(s), {request.Quantity} demandé(s).");
             }
         }
@@ -157,13 +174,13 @@ public sealed class StockService : IStockService
             ProductId = product.Id,
             Type = request.Type,
             Quantity = request.Quantity,
-            MovementDate = _clock.GetUtcNow().UtcDateTime,
+            MovementDate = _time.GetUtcNow().UtcDateTime,
             UserId = request.UserId,
             Reason = reason
         };
 
-        _db.Set<StockMovement>().Add(movement);
-        await _db.SaveChangesAsync(cancellationToken);
+        db.StockMovements.Add(movement);
+        await db.SaveChangesAsync(cancellationToken);
 
         return ToDto(movement);
     }
@@ -173,14 +190,16 @@ public sealed class StockService : IStockService
         int productId,
         CancellationToken cancellationToken = default)
     {
-        var movements = await _db.Set<StockMovement>()
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var movements = await db.StockMovements
             .AsNoTracking()
             .Where(m => m.ProductId == productId)
             .OrderByDescending(m => m.MovementDate)
             .ThenByDescending(m => m.Id)
             .ToListAsync(cancellationToken);
 
-        return movements.Select(x => ToDto(x)).ToList();
+        return movements.Select(m => ToDto(m)).ToList();
     }
 
     public async Task<IReadOnlyList<ProductDto>> GetLowStockProductsAsync(
@@ -190,9 +209,12 @@ public sealed class StockService : IStockService
         return products.Where(p => p.IsBelowAlertThreshold).ToList();
     }
 
-    private async Task<decimal> GetCurrentStockAsync(int productId, CancellationToken cancellationToken)
+    private static async Task<decimal> GetCurrentStockAsync(
+        PressingDbContext db,
+        int productId,
+        CancellationToken cancellationToken)
     {
-        var movements = await _db.Set<StockMovement>()
+        var movements = await db.StockMovements
             .AsNoTracking()
             .Where(m => m.ProductId == productId)
             .ToListAsync(cancellationToken);
@@ -200,8 +222,9 @@ public sealed class StockService : IStockService
         return StockCalculator.GetCurrentStock(movements);
     }
 
-    private async Task<Dictionary<int, decimal>> GetStocksAsync(
-        IReadOnlyCollection<int> productIds,
+    private static async Task<Dictionary<int, decimal>> GetStocksAsync(
+        PressingDbContext db,
+        List<int> productIds,
         CancellationToken cancellationToken)
     {
         if (productIds.Count == 0)
@@ -209,10 +232,9 @@ public sealed class StockService : IStockService
             return new Dictionary<int, decimal>();
         }
 
-        var ids = productIds.ToList();
-        var movements = await _db.Set<StockMovement>()
+        var movements = await db.StockMovements
             .AsNoTracking()
-            .Where(m => ids.Contains(m.ProductId))
+            .Where(m => productIds.Contains(m.ProductId))
             .ToListAsync(cancellationToken);
 
         return movements
@@ -220,9 +242,13 @@ public sealed class StockService : IStockService
             .ToDictionary(g => g.Key, g => StockCalculator.GetCurrentStock(g));
     }
 
-    private async Task EnsureNameIsAvailableAsync(string name, int? ignoredProductId, CancellationToken cancellationToken)
+    private static async Task EnsureNameIsAvailableAsync(
+        PressingDbContext db,
+        string name,
+        int? ignoredProductId,
+        CancellationToken cancellationToken)
     {
-        var existing = await _db.Set<Product>()
+        var existing = await db.Products
             .AsNoTracking()
             .Select(p => new { p.Id, p.Name })
             .ToListAsync(cancellationToken);
@@ -233,7 +259,7 @@ public sealed class StockService : IStockService
 
         if (duplicate)
         {
-            throw new InvalidOperationException($"Un produit nommé « {name} » existe déjà.");
+            throw new BusinessRuleException($"Un produit nommé « {name} » existe déjà.");
         }
     }
 
@@ -241,7 +267,7 @@ public sealed class StockService : IStockService
     {
         if (threshold < 0)
         {
-            throw new ArgumentException("Le seuil d'alerte ne peut pas être négatif.", nameof(threshold));
+            throw new BusinessRuleException("Le seuil d'alerte ne peut pas être négatif.");
         }
     }
 

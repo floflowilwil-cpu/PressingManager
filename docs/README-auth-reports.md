@@ -163,3 +163,16 @@ Chaque membre de l'équipe lance ensuite `dotnet ef database update` après son 
   **créées dans la période**. Les deux ne se comparent donc pas ligne à ligne.
 - Export PDF : liste des commandes uniquement (pas encore de PDF pour la synthèse financière). Il utilise QuestPDF (licence Community :
   gratuite pour un projet scolaire ou une petite entreprise). Le CSV s'ouvre directement dans Excel.
+
+## Langues FR / EN (écrans)
+
+- Le français est la langue par défaut ; le choix FR/EN fait sur l'écran de connexion est mémorisé dans `%LocalAppData%\PressingManager\language.txt`.
+- Tous les textes sont dans `App/Localization/Strings.cs` (une ligne en français + la même clé en anglais).
+- En XAML : `Text="{loc:T Stats_Title}"` (le texte change tout seul quand la langue change). En C# : `Loc.Instance["Stats_Title"]`.
+- Les noms d'enum (statuts, rôles) passent par `Loc.Instance.Status(...)` et `Loc.Instance.Role(...)`.
+- Limite connue : les messages d'erreur renvoyés par les services (`BusinessRuleException`) restent en français.
+- Pour ajouter un écran traduit : ajouter les clés dans `Strings.cs`, puis utiliser `{loc:T Clé}` avec `xmlns:loc="clr-namespace:PressingManager.App.Localization"`.
+
+## Devise
+
+Les montants des écrans Statistiques s'affichent en FCFA via `MoneyFormatter.FormatFcfa(...)` (arrondi à l'unité, sans centimes).

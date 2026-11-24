@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using PressingManager.App.Localization;
 using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
 using PressingManager.Infrastructure;
@@ -20,6 +21,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Langue memorisee (francais par defaut) : a charger avant d'afficher la premiere fenetre.
+        Loc.Instance.LoadSaved();
 
         try
         {
@@ -55,6 +59,8 @@ public partial class App : Application
             services.AddTransient<PaymentManagementView>();
             services.AddTransient<ReportsViewModel>();
             services.AddTransient<ReportsView>();
+            services.AddTransient<UserManagementViewModel>();
+            services.AddTransient<UserManagementView>();
             services.AddTransient<MainWindow>();
             services.AddTransient<DashboardWindow>();
 
