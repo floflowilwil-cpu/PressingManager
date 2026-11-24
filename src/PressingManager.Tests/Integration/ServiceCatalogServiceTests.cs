@@ -1,3 +1,4 @@
+using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
 using PressingManager.Infrastructure.Services;
@@ -11,10 +12,23 @@ public class ServiceCatalogServiceTests : IDisposable
 
     private readonly ProcessingTestDb _db = new();
     private readonly ProcessingTestClock _clock = new(Start);
+    private readonly int _userId;
+
+    public ServiceCatalogServiceTests()
+    {
+        _userId = _db.AddUser();
+    }
 
     public void Dispose() => _db.Dispose();
 
-    private ServiceCatalogService CreateService() => new(_db.CreateContext(), _clock);
+    private ServiceCatalogService CreateService() =>
+        new(_db, new AuditService(_db, new CurrentUserContext(), _clock), _clock);
+
+    private int CountPriceAuditLogs()
+    {
+        using var db = _db.CreateDbContext();
+        return db.AuditLogs.Count(a => a.Action == ServiceCatalogService.PriceChangedAuditAction);
+    }
 
     [Fact]
     public async Task CreateAsync_ThenGetById_ReturnsTheService()
@@ -36,7 +50,7 @@ public class ServiceCatalogServiceTests : IDisposable
         var service = CreateService();
         await service.CreateAsync(new CreateServiceDto("Repassage", null));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
+        await Assert.ThrowsAsync<BusinessRuleException>(
             () => service.CreateAsync(new CreateServiceDto("REPASSAGE", null)));
     }
 
@@ -45,7 +59,7 @@ public class ServiceCatalogServiceTests : IDisposable
     {
         var service = CreateService();
 
-        await Assert.ThrowsAsync<ArgumentException>(
+        await Assert.ThrowsAsync<BusinessRuleException>(
             () => service.CreateAsync(new CreateServiceDto("   ", null)));
     }
 
@@ -79,9 +93,9 @@ public class ServiceCatalogServiceTests : IDisposable
         var service = CreateService();
         var created = await service.CreateAsync(new CreateServiceDto("Lavage", null));
 
-        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 500m, 1));
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 500m, _userId));
         _clock.Advance(TimeSpan.FromDays(1));
-        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 600m, 1));
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 600m, _userId));
 
         var now = await service.GetCurrentPriceAsync(created.Id, BillingUnit.Kilogram);
         var yesterday = await service.GetCurrentPriceAsync(
@@ -100,12 +114,26 @@ public class ServiceCatalogServiceTests : IDisposable
         var service = CreateService();
         var created = await service.CreateAsync(new CreateServiceDto("Lavage", null));
 
-        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, 200m, 1));
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, 200m, _userId));
         _clock.Advance(TimeSpan.FromHours(1));
-        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, 200m, 1));
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, 200m, _userId));
 
         var loaded = await service.GetByIdAsync(created.Id);
         Assert.Single(loaded!.Prices);
+        Assert.Equal(1, CountPriceAuditLogs());
+    }
+
+    [Fact]
+    public async Task SetPriceAsync_EachChange_IsWrittenToTheAuditLog()
+    {
+        var service = CreateService();
+        var created = await service.CreateAsync(new CreateServiceDto("Lavage", null));
+
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 500m, _userId));
+        _clock.Advance(TimeSpan.FromHours(1));
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 650m, _userId));
+
+        Assert.Equal(2, CountPriceAuditLogs());
     }
 
     [Fact]
@@ -114,9 +142,9 @@ public class ServiceCatalogServiceTests : IDisposable
         var service = CreateService();
         var created = await service.CreateAsync(new CreateServiceDto("Lavage", null));
 
-        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 500m, 1));
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Kilogram, 500m, _userId));
         _clock.Advance(TimeSpan.FromHours(1));
-        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, 300m, 1));
+        await service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, 300m, _userId));
 
         Assert.Equal(500m, (await service.GetCurrentPriceAsync(created.Id, BillingUnit.Kilogram))!.Amount);
         Assert.Equal(300m, (await service.GetCurrentPriceAsync(created.Id, BillingUnit.Piece))!.Amount);
@@ -130,8 +158,8 @@ public class ServiceCatalogServiceTests : IDisposable
         var service = CreateService();
         var created = await service.CreateAsync(new CreateServiceDto("Lavage", null));
 
-        await Assert.ThrowsAsync<ArgumentException>(
-            () => service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, amount, 1)));
+        await Assert.ThrowsAsync<BusinessRuleException>(
+            () => service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, amount, _userId)));
     }
 
     [Fact]
@@ -139,8 +167,18 @@ public class ServiceCatalogServiceTests : IDisposable
     {
         var service = CreateService();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.SetPriceAsync(new SetServicePriceDto(999, BillingUnit.Piece, 100m, 1)));
+        await Assert.ThrowsAsync<BusinessRuleException>(
+            () => service.SetPriceAsync(new SetServicePriceDto(999, BillingUnit.Piece, 100m, _userId)));
+    }
+
+    [Fact]
+    public async Task SetPriceAsync_UnknownUser_IsRefused()
+    {
+        var service = CreateService();
+        var created = await service.CreateAsync(new CreateServiceDto("Lavage", null));
+
+        await Assert.ThrowsAsync<BusinessRuleException>(
+            () => service.SetPriceAsync(new SetServicePriceDto(created.Id, BillingUnit.Piece, 100m, 9999)));
     }
 
     [Fact]

@@ -1,0 +1,501 @@
+<UserControl x:Class="PressingManager.App.Views.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F3F6FB">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <!-- Palette alignee sur le tableau de bord : marine #0F2A47 / #12365D, bleu #0864D9, turquoise #08A6B5 -->
+
+        <Style x:Key="CardLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#718096" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#12365D" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#0864D9" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="16,9" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Box" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="LightButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="#12365D" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#D8E1EC" />
+        </Style>
+
+        <!-- Puces de periode : 7 j / 30 j / 3 mois / 1 an -->
+        <Style x:Key="PeriodChip" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Box" Background="White" CornerRadius="8" Padding="14,8"
+                                BorderBrush="#D8E1EC" BorderThickness="1">
+                            <ContentPresenter x:Name="Text" TextElement.Foreground="#12365D"
+                                              TextElement.FontWeight="SemiBold" TextElement.FontSize="12.5" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#0864D9" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#0864D9" />
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#0864D9" />
+                                <Setter TargetName="Text" Property="TextElement.Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Onglets du tableau (commandes / soldes / a recuperer) : soulignement turquoise -->
+        <Style x:Key="TabRadio" TargetType="RadioButton">
+            <Setter Property="Margin" Value="0,0,22,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Line" BorderBrush="Transparent" BorderThickness="0,0,0,3" Padding="0,4,0,6">
+                            <ContentPresenter x:Name="Text" TextElement.Foreground="#718096"
+                                              TextElement.FontWeight="SemiBold" TextElement.FontSize="13" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Line" Property="BorderBrush" Value="#08A6B5" />
+                                <Setter TargetName="Text" Property="TextElement.Foreground" Value="#12365D" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RightAligned" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+
+        <Style x:Key="BalanceCell" TargetType="TextBlock" BasedOn="{StaticResource RightAligned}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasBalance}" Value="True">
+                    <Setter Property="Foreground" Value="#C0392B" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="KpiCard" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="20,18" />
+            <Setter Property="Margin" Value="0,0,14,0" />
+        </Style>
+
+        <Style x:Key="KpiIconBadge" TargetType="Border">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Background" Value="#80FFFFFF" />
+            <Setter Property="Margin" Value="0,0,14,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="32">
+
+            <!-- ACCES REFUSE (tout autre role que l'administrateur) -->
+            <Border Background="White" CornerRadius="10" Padding="30" VerticalAlignment="Top"
+                    Visibility="{Binding IsAccessDenied, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="Les statistiques sont réservées à l'administrateur."
+                           FontSize="16" Foreground="#C0392B" TextWrapping="Wrap" />
+            </Border>
+
+            <StackPanel Visibility="{Binding CanViewReports, Converter={StaticResource BoolToVisibility}}">
+
+                <!-- TITRE + PERIODE + EXPORT -->
+                <Grid Margin="0,0,0,22">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Rapports &amp; Statistiques" FontSize="28" FontWeight="Bold" Foreground="#12365D" />
+                        <TextBlock Text="Recettes, dépenses et bénéfice sur la période choisie."
+                                   FontSize="14" Foreground="#718096" Margin="0,6,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <RadioButton GroupName="ReportPeriod" Content="7 j"
+                                     IsChecked="{Binding IsWeekPeriod, Mode=TwoWay}" Style="{StaticResource PeriodChip}" />
+                        <RadioButton GroupName="ReportPeriod" Content="30 j"
+                                     IsChecked="{Binding IsMonthPeriod, Mode=TwoWay}" Style="{StaticResource PeriodChip}" />
+                        <RadioButton GroupName="ReportPeriod" Content="3 mois"
+                                     IsChecked="{Binding IsQuarterPeriod, Mode=TwoWay}" Style="{StaticResource PeriodChip}" />
+                        <RadioButton GroupName="ReportPeriod" Content="1 an"
+                                     IsChecked="{Binding IsYearPeriod, Mode=TwoWay}" Style="{StaticResource PeriodChip}" />
+
+                        <Button Content="Exporter  ⌄" Click="BtnExport_Click" Style="{StaticResource LightButton}"
+                                Visibility="{Binding CanExport, Converter={StaticResource BoolToVisibility}}">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Exporter en CSV (Excel)" Click="BtnExportCsv_Click" />
+                                    <MenuItem Header="Exporter en PDF" Click="BtnExportPdf_Click" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- CARTES : RECETTES / DEPENSES / BENEFICE -->
+                <UniformGrid Columns="3" Margin="0,0,-14,22">
+
+                    <!-- Recettes -->
+                    <Border Style="{StaticResource KpiCard}" Background="#DDF5EC">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource KpiIconBadge}">
+                                <Viewbox Width="22" Height="22">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#16845B" StrokeThickness="2.2" StrokeLineJoin="Round"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="M3,17 L9,11 L13,15 L21,7 M15,7 L21,7 L21,13" />
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Recettes" FontSize="13" FontWeight="SemiBold" Foreground="#16845B" />
+                                <TextBlock Text="{Binding CollectedText}" FontSize="28" FontWeight="Bold" Foreground="#0B5E40" />
+                                <TextBlock Text="{Binding CollectedTrendText}" FontSize="12" FontWeight="SemiBold" Foreground="#16845B" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Depenses -->
+                    <Border Style="{StaticResource KpiCard}" Background="#FDE6E0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource KpiIconBadge}">
+                                <Viewbox Width="22" Height="22">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#D9534F" StrokeThickness="2.2" StrokeLineJoin="Round"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="M3,7 L9,13 L13,9 L21,17 M15,17 L21,17 L21,11" />
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Dépenses" FontSize="13" FontWeight="SemiBold" Foreground="#D9534F" />
+                                <TextBlock Text="{Binding ExpensesText}" FontSize="28" FontWeight="Bold" Foreground="#A8322F" />
+                                <TextBlock Text="{Binding ExpensesTrendText}" FontSize="12" FontWeight="SemiBold" Foreground="#D9534F" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Benefice (passe au rouge s'il est negatif) -->
+                    <Border>
+                        <Border.Resources>
+                            <Style TargetType="TextBlock" x:Key="NetText">
+                                <Setter Property="Foreground" Value="#16845B" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsNetNegative}" Value="True">
+                                        <Setter Property="Foreground" Value="#D9534F" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Resources>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource KpiCard}">
+                                <Setter Property="Background" Value="#DDF5EC" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsNetNegative}" Value="True">
+                                        <Setter Property="Background" Value="#FDE6E0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource KpiIconBadge}">
+                                <Viewbox Width="22" Height="22">
+                                    <Canvas Width="24" Height="24">
+                                        <Path StrokeThickness="2.2" StrokeLineJoin="Round"
+                                              Data="M3,7 L21,7 L21,19 L3,19 Z M3,11 L21,11 M16,15 L18,15">
+                                            <Path.Style>
+                                                <Style TargetType="Path">
+                                                    <Setter Property="Stroke" Value="#16845B" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsNetNegative}" Value="True">
+                                                            <Setter Property="Stroke" Value="#D9534F" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Path.Style>
+                                        </Path>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Bénéfice" FontSize="13" FontWeight="SemiBold" Style="{StaticResource NetText}" />
+                                <TextBlock Text="{Binding NetResultText}" FontSize="28" FontWeight="Bold" Style="{StaticResource NetText}" />
+                                <TextBlock Text="{Binding NetTrendText}" FontSize="12" FontWeight="SemiBold" Style="{StaticResource NetText}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <!-- GRAPHIQUES -->
+                <Grid Margin="0,0,0,22">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Evolution -->
+                    <Border Background="White" CornerRadius="10" Padding="22" Margin="0,0,16,0">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,18">
+                                <TextBlock Text="Évolution des recettes" Style="{StaticResource SectionTitle}" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Ellipse Width="9" Height="9" Fill="#08A6B5" Margin="0,0,5,0" />
+                                    <TextBlock Text="Recettes" FontSize="12" Foreground="#718096" Margin="0,0,14,0" />
+                                    <Ellipse Width="9" Height="9" Fill="#0864D9" Margin="0,0,5,0" />
+                                    <TextBlock Text="Dépenses" FontSize="12" Foreground="#718096" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="44" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Axe vertical (hauteur utile = 170, comme ReportsViewModel.PlotHeight) -->
+                                <Grid Height="170" VerticalAlignment="Top">
+                                    <TextBlock Text="{Binding AxisTopText}" FontSize="11" Foreground="#718096"
+                                               VerticalAlignment="Top" Margin="0,-8,6,0" TextAlignment="Right" />
+                                    <TextBlock Text="{Binding AxisMiddleText}" FontSize="11" Foreground="#718096"
+                                               VerticalAlignment="Center" Margin="0,0,6,0" TextAlignment="Right" />
+                                    <TextBlock Text="0" FontSize="11" Foreground="#718096"
+                                               VerticalAlignment="Bottom" Margin="0,0,6,-8" TextAlignment="Right" />
+                                </Grid>
+
+                                <Grid Grid.Column="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="170" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Lignes de repere -->
+                                    <Grid Grid.Row="0">
+                                        <Border BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                        <Border BorderBrush="#EDF2F7" BorderThickness="0,1,0,0" VerticalAlignment="Center" />
+                                        <Border BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" VerticalAlignment="Bottom" Margin="0,0,0,-1" />
+                                    </Grid>
+
+                                    <!-- Barres -->
+                                    <ItemsControl Grid.Row="0" Grid.RowSpan="2" ItemsSource="{Binding Bars}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Background="Transparent" ToolTip="{Binding Tooltip}">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="170" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border Grid.Column="0" Background="#08A6B5" CornerRadius="3,3,0,0"
+                                                            Height="{Binding CollectedHeight}" MaxWidth="14" Margin="1,0"
+                                                            VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
+                                                    <Border Grid.Column="1" Background="#0864D9" CornerRadius="3,3,0,0"
+                                                            Height="{Binding ExpensesHeight}" MaxWidth="14" Margin="1,0"
+                                                            VerticalAlignment="Bottom" HorizontalAlignment="Stretch" />
+
+                                                    <!-- Marges negatives : le texte peut deborder de la colonne etroite sans etre coupe -->
+                                                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Label}"
+                                                               FontSize="11" Foreground="#718096" TextAlignment="Center"
+                                                               TextWrapping="NoWrap" Margin="-24,8,-24,0" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Grid.Row="0" Text="Aucune recette ni dépense sur cette période."
+                                               Foreground="#718096" FontSize="13" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Visibility="{Binding HasNoChartData, Converter={StaticResource BoolToVisibility}}" />
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Repartition des services -->
+                    <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="22">
+                        <StackPanel>
+                            <TextBlock Text="Répartition des services" Style="{StaticResource SectionTitle}" Margin="0,0,0,18" />
+
+                            <Grid MinHeight="190">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Anneau (160 x 160 : centre 80, comme ReportsViewModel) -->
+                                <Grid Width="160" Height="160" VerticalAlignment="Center" Margin="0,0,18,0">
+                                    <Ellipse Stroke="#EDF2F7" StrokeThickness="26" Margin="17" />
+
+                                    <ItemsControl ItemsSource="{Binding ServiceSlices}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas Width="160" Height="160" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Path Data="{Binding Shape}" Fill="{Binding Color}"
+                                                      Stroke="White" StrokeThickness="2" StrokeLineJoin="Round"
+                                                      ToolTip="{Binding Tooltip}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                Visibility="{Binding HasServiceData, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="{Binding ServiceTotalText}" FontSize="20" FontWeight="Bold"
+                                                   Foreground="#12365D" HorizontalAlignment="Center" />
+                                        <TextBlock Text="facturé" FontSize="11" Foreground="#718096" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Legende -->
+                                <ItemsControl Grid.Column="1" ItemsSource="{Binding ServiceSlices}" VerticalAlignment="Center">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,0,0,12" LastChildFill="True">
+                                                <Ellipse DockPanel.Dock="Left" Width="10" Height="10" Fill="{Binding Color}"
+                                                         Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding PercentText}" FontWeight="SemiBold"
+                                                           Foreground="#12365D" Margin="10,0,0,0" />
+                                                <TextBlock Text="{Binding Name}" Foreground="#4A5568" TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Grid.ColumnSpan="2" Text="Aucune commande sur cette période."
+                                           Foreground="#718096" FontSize="13" HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Visibility="{Binding HasNoServiceData, Converter={StaticResource BoolToVisibility}}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- DETAIL : COMMANDES / SOLDES DUS / A RECUPERER -->
+                <Border Background="White" CornerRadius="10" Padding="22">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <RadioButton GroupName="ReportView" Content="Commandes de la période"
+                                             IsChecked="{Binding IsOrdersView, Mode=TwoWay}" Style="{StaticResource TabRadio}" />
+                                <RadioButton GroupName="ReportView" Content="Soldes dus"
+                                             IsChecked="{Binding IsOutstandingView, Mode=TwoWay}" Style="{StaticResource TabRadio}" />
+                                <RadioButton GroupName="ReportView" Content="À récupérer"
+                                             IsChecked="{Binding IsAwaitingView, Mode=TwoWay}" Style="{StaticResource TabRadio}" />
+                            </StackPanel>
+
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding StatusFilters}" DisplayMemberPath="Label"
+                                      SelectedItem="{Binding SelectedStatus}" MinWidth="170" Padding="8,6"
+                                      Visibility="{Binding ShowStatusFilter, Converter={StaticResource BoolToVisibility}}" />
+                        </Grid>
+
+                        <TextBlock DockPanel.Dock="Bottom" Text="{Binding DisplayedCountText}"
+                                   Foreground="#718096" FontSize="12" Margin="0,8,0,0" />
+
+                        <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True"
+                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#EDF2F7" CanUserAddRows="False"
+                                  BorderThickness="0" Background="White" RowHeight="34" MaxHeight="340">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F3F6FB" />
+                                    <Setter Property="Foreground" Value="#12365D" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="Padding" Value="10,8" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="N° commande" Binding="{Binding OrderNumber}" Width="130" />
+                                <DataGridTextColumn Header="Date" Binding="{Binding DateText}" Width="130" />
+                                <DataGridTextColumn Header="Client" Binding="{Binding CustomerName}" Width="*" />
+                                <DataGridTextColumn Header="Statut" Binding="{Binding StatusLabel}" Width="170" />
+                                <DataGridTextColumn Header="Total" Binding="{Binding TotalText}" Width="100"
+                                                    ElementStyle="{StaticResource RightAligned}" />
+                                <DataGridTextColumn Header="Payé" Binding="{Binding PaidText}" Width="100"
+                                                    ElementStyle="{StaticResource RightAligned}" />
+                                <DataGridTextColumn Header="Solde" Binding="{Binding BalanceText}" Width="100"
+                                                    ElementStyle="{StaticResource BalanceCell}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <!-- MESSAGE -->
+                <TextBlock Text="{Binding Message}" Margin="0,12,0,0" TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="#1E8449" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsError}" Value="True">
+                                    <Setter Property="Foreground" Value="#C0392B" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

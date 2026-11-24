@@ -21,4 +21,15 @@ public interface IReportService
 
     /// <summary>Commandes pretes mais pas encore recuperees.</summary>
     Task<IReadOnlyList<OrderReportRow>> GetAwaitingPickupAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Encaissements et depenses par jour (periode de 31 jours au plus) ou par mois (periode plus longue),
+    /// pour le graphique en barres. Tous les jours / mois de la periode sont presents, meme a zero.
+    /// </summary>
+    Task<IReadOnlyList<TrendPoint>> GetTrendAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>Montant facture par service sur la periode (commandes non annulees), le plus gros d'abord.</summary>
+    Task<IReadOnlyList<ServiceShare>> GetServiceBreakdownAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken = default);
 }
