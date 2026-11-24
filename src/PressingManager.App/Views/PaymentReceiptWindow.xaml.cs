@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
+using PressingManager.Infrastructure.Services;
 
 namespace PressingManager.App.Views;
 
@@ -21,6 +22,27 @@ public partial class PaymentReceiptWindow : Window
         InitializeComponent();
         _receipt = receipt ?? throw new ArgumentNullException(nameof(receipt));
         DataContext = new ReceiptViewModel(receipt);
+    }
+
+    private void SavePdfButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new SaveFileDialog
+        {
+            FileName = $"{_receipt.ReceiptNumber}.pdf",
+            Filter = "Document PDF (*.pdf)|*.pdf",
+            Title = "Enregistrer le reçu en PDF"
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            PaymentReceiptPdfBuilder.BuildReceiptPdf(_receipt, dialog.FileName);
+            MessageBox.Show(
+                this,
+                "Le reçu PDF a été généré avec succès.",
+                "PDF généré",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
     }
 
     private void PrintButton_Click(object sender, RoutedEventArgs e)

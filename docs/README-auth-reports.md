@@ -13,7 +13,7 @@ Branche : `feature/auth-reports`
 | Hachage des mots de passe | `IPasswordHasher` | `Pbkdf2PasswordHasher` (PBKDF2-SHA256, sans package externe) |
 | Rapports | `IReportService` + `ReportCalculator` | `ReportService` (commandes, synthèse financière, soldes impayés, à récupérer) |
 | Indicateurs du tableau de bord | `IDashboardService` + `DashboardCalculator` | `DashboardService` |
-| Export CSV des rapports | `IReportExportService` + `CsvExporter` | `ReportExportService` (permission + audit) |
+| Export CSV et PDF des rapports | `IReportExportService` + `CsvExporter` | `ReportExportService` + `PdfReportBuilder` (QuestPDF) ; permission + audit |
 
 Écrans WPF : `Views/LoginWindow` et `Views/UserManagementView` (+ ViewModels).
 
@@ -113,7 +113,8 @@ var toPickUp    = await reports.GetAwaitingPickupAsync();
 var dashboard   = await dashboardService.GetSummaryAsync();                // tableau de bord
 
 // Export : l'écran choisit le chemin (SaveFileDialog), le service vérifie la permission et écrit l'audit
-await exportService.ExportOrdersAsync(orders, path, "Commandes 01/11/2026 - 30/11/2026");
+await exportService.ExportOrdersAsync(orders, path, "Commandes 01/11/2026 - 30/11/2026");     // .csv
+await exportService.ExportOrdersPdfAsync(orders, path, "Commandes 01/11/2026 - 30/11/2026");  // .pdf
 ```
 
 - Les dates des `OrderReportRow` sont en **UTC** : les convertir en heure locale pour l'affichage (`ToLocalTime()`).
@@ -123,10 +124,42 @@ await exportService.ExportOrdersAsync(orders, path, "Commandes 01/11/2026 - 30/1
   ou si l'utilisateur n'a pas `ViewStock`, `StockAlerts` est vide.
 - Menu : afficher « Rapports » seulement si `session.HasPermission(Permission.ViewReports)`.
 
+## Mot de passe oublié
+
+L'application est hors ligne (pas d'e-mail ni de SMS), donc deux cas :
+
+- **Un employé oublie son mot de passe** : l'administrateur le réinitialise depuis la gestion des utilisateurs
+  (`IUserService.ResetPasswordAsync`, déjà en place).
+- **L'administrateur oublie le sien** (ou n'importe quel compte sans administrateur disponible) : **code de récupération**
+  à usage unique.
+  1. Générer : `IUserService.GenerateRecoveryCodeAsync(userId)` (permission `ManageUsers`). Retourne un code du type
+     `K7QM-2XWD-9PRT` **une seule fois** : l'afficher, le faire noter et le ranger en lieu sûr. Seul son hash est stocké.
+     À faire pour l'administrateur juste après la configuration initiale.
+  2. Utiliser : lien « Mot de passe oublié ? » sur l'écran de connexion, qui appelle
+     `IAuthService.ResetPasswordWithRecoveryCodeAsync(username, code, nouveauMotDePasse)`.
+- Le code est insensible à la casse, aux espaces et aux tirets, et ne sert qu'une fois (il faut en générer un nouveau).
+- Un mauvais code compte comme un échec de connexion : 5 échecs = compte verrouillé 5 minutes.
+- Identifiant inconnu, compte désactivé, compte sans code ou mauvais code : **même message** d'erreur.
+- Le code n'est jamais écrit dans le journal d'audit (actions `RecoveryCodeGenerated`, `RecoveryFailed`,
+  `PasswordResetWithRecoveryCode`).
+
+**Base de données** : nouvelle colonne `Users.RecoveryCodeHash` (texte, nullable). Après avoir récupéré le code :
+
+```
+dotnet ef migrations add AddUserRecoveryCode --project src/PressingManager.Infrastructure --startup-project src/PressingManager.App
+dotnet ef database update --project src/PressingManager.Infrastructure --startup-project src/PressingManager.App
+```
+
+Chaque membre de l'équipe lance ensuite `dotnet ef database update` après son `git pull` pour mettre à jour sa base locale.
+
+**Pour la Personne 1 (écrans)** : un lien « Mot de passe oublié ? » sur la connexion (identifiant, code, nouveau mot de passe
++ confirmation), et un bouton « Générer un code de récupération » dans la gestion des utilisateurs qui affiche le code une fois.
+
 ## Limites connues
 
 - Les rapports chargent les commandes en mémoire pour calculer les montants (SQLite ne sait pas additionner des `decimal`
   côté base). Très suffisant pour un pressing ; à revoir si la base atteint des dizaines de milliers de commandes.
 - « Encaissé » = paiements valides **datés dans la période** (même pour une commande créée avant) ; « Facturé » = commandes
   **créées dans la période**. Les deux ne se comparent donc pas ligne à ligne.
-- Export PDF : non fait (phase dédiée, section 4.10 de la documentation) ; le CSV s'ouvre directement dans Excel.
+- Export PDF : liste des commandes uniquement (pas encore de PDF pour la synthèse financière). Il utilise QuestPDF (licence Community :
+  gratuite pour un projet scolaire ou une petite entreprise). Le CSV s'ouvre directement dans Excel.

@@ -14,6 +14,7 @@ public sealed class AuthService : IAuthService
     public static readonly TimeSpan LockDuration = TimeSpan.FromMinutes(5);
 
     private const string InvalidCredentials = "Nom d'utilisateur ou mot de passe incorrect.";
+    private const string InvalidRecovery = "Identifiant ou code de récupération incorrect.";
 
     private readonly IDbContextFactory<PressingDbContext> _dbFactory;
     private readonly IPasswordHasher _hasher;
@@ -137,6 +138,74 @@ public sealed class AuthService : IAuthService
         }
 
         _session.SignOut();
+    }
+
+    public async Task ResetPasswordWithRecoveryCodeAsync(
+        string username, string recoveryCode, string newPassword, CancellationToken cancellationToken = default)
+    {
+        var policyError = PasswordPolicy.Validate(newPassword);
+        if (policyError is not null)
+        {
+            throw new BusinessRuleException(policyError);
+        }
+
+        var normalized = UserRules.NormalizeUsername(username);
+        var code = RecoveryCode.Normalize(recoveryCode);
+        var now = _time.GetUtcNow().UtcDateTime;
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Username == normalized, cancellationToken);
+
+        // Même message dans tous les cas : on ne révèle pas si le compte existe, est désactivé ou n'a pas de code.
+        if (user is null || !user.IsActive || user.RecoveryCodeHash is null)
+        {
+            await _audit.LogAsync(
+                AuditActions.RecoveryFailed, nameof(User), user?.Id.ToString(), "Récupération refusée",
+                user?.Id, cancellationToken);
+            throw new BusinessRuleException(InvalidRecovery);
+        }
+
+        if (user.LockedUntil is { } lockedUntil && lockedUntil > now)
+        {
+            var minutes = (int)Math.Ceiling((lockedUntil - now).TotalMinutes);
+            throw new BusinessRuleException($"Compte verrouillé après trop d'échecs. Réessayez dans {minutes} minute(s).");
+        }
+
+        if (code.Length == 0 || !_hasher.Verify(code, user.RecoveryCodeHash))
+        {
+            await RegisterRecoveryFailureAsync(db, user, now, cancellationToken);
+            throw new BusinessRuleException(InvalidRecovery);
+        }
+
+        user.PasswordHash = _hasher.Hash(newPassword);
+        user.RecoveryCodeHash = null; // usage unique : l'administrateur doit en générer un nouveau
+        user.FailedLoginAttempts = 0;
+        user.LockedUntil = null;
+        await db.SaveChangesAsync(cancellationToken);
+
+        await _audit.LogAsync(
+            AuditActions.PasswordResetWithRecoveryCode, nameof(User), user.Id.ToString(), user.Username,
+            user.Id, cancellationToken);
+    }
+
+    /// <summary>Un mauvais code compte comme un échec de connexion (même verrouillage de 5 minutes).</summary>
+    private async Task RegisterRecoveryFailureAsync(
+        PressingDbContext db, User user, DateTime now, CancellationToken cancellationToken)
+    {
+        user.FailedLoginAttempts++;
+        var locked = user.FailedLoginAttempts >= MaxFailedAttempts;
+
+        if (locked)
+        {
+            user.LockedUntil = now + LockDuration;
+            user.FailedLoginAttempts = 0;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        await _audit.LogAsync(
+            locked ? AuditActions.AccountLocked : AuditActions.RecoveryFailed,
+            nameof(User), user.Id.ToString(), userId: user.Id, cancellationToken: cancellationToken);
     }
 
     private async Task<LoginResult> RegisterFailureAsync(
