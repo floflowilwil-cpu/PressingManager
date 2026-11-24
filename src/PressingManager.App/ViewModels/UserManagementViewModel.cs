@@ -50,6 +50,13 @@ public partial class UserManagementViewModel : ObservableObject
 
     public bool IsAccessDenied => !CanManageUsers;
 
+    /// <summary>La vue est creee avant la connexion : a rappeler a chaque ouverture de l'onglet pour relire les droits.</summary>
+    public void RefreshPermissions()
+    {
+        OnPropertyChanged(nameof(CanManageUsers));
+        OnPropertyChanged(nameof(IsAccessDenied));
+    }
+
     [ObservableProperty]
     private IReadOnlyList<RoleOption> _roles;
 
