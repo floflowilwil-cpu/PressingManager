@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using PressingManager.App.ViewModels;
+using PressingManager.App.Views;
 using PressingManager.Core.Enums;
 using PressingManager.Core.Interfaces;
 

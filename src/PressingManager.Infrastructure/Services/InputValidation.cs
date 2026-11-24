@@ -1,3 +1,9 @@
+using PressingManager.Core.Common;
+using PressingManager.Core.DTOs;
+using PressingManager.Core.Entities;
+using PressingManager.Core.Enums;
+using PressingManager.Core.Interfaces;
+
 namespace PressingManager.Infrastructure.Services;
 
 /// <summary>Validations de saisie communes aux services du module traitement / stocks.</summary>
@@ -10,12 +16,12 @@ internal static class InputValidation
 
         if (string.IsNullOrEmpty(text))
         {
-            throw new ArgumentException($"{fieldLabel} est obligatoire.", nameof(value));
+            throw new BusinessRuleException($"{fieldLabel} est obligatoire.");
         }
 
         if (text.Length > maxLength)
         {
-            throw new ArgumentException($"{fieldLabel} ne doit pas dépasser {maxLength} caractères.", nameof(value));
+            throw new BusinessRuleException($"{fieldLabel} ne doit pas dépasser {maxLength} caractères.");
         }
 
         return text;
@@ -33,7 +39,7 @@ internal static class InputValidation
 
         if (text.Length > maxLength)
         {
-            throw new ArgumentException($"{fieldLabel} ne doit pas dépasser {maxLength} caractères.", nameof(value));
+            throw new BusinessRuleException($"{fieldLabel} ne doit pas dépasser {maxLength} caractères.");
         }
 
         return text;
