@@ -1,4 +1,3 @@
-using System.Globalization;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
 
@@ -68,7 +67,6 @@ public static class ReportCalculator
         }
 
         var daily = (last - first).TotalDays < 31;
-        var french = CultureInfo.GetCultureInfo("fr-FR");
 
         DateTime KeyOf(DateTime local) => daily ? local.Date : new DateTime(local.Year, local.Month, 1);
 
@@ -82,11 +80,7 @@ public static class ReportCalculator
         var points = new List<TrendPoint>();
         for (var key = KeyOf(first); key <= last; key = daily ? key.AddDays(1) : key.AddMonths(1))
         {
-            var label = daily
-                ? key.ToString("dd/MM", french)
-                : key.ToString("MMM", french);
-
-            points.Add(new TrendPoint(label, collected.GetValueOrDefault(key), spent.GetValueOrDefault(key)));
+            points.Add(new TrendPoint(key, !daily, collected.GetValueOrDefault(key), spent.GetValueOrDefault(key)));
         }
 
         return points;

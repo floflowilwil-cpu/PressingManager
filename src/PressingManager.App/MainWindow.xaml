@@ -2,6 +2,7 @@
 <Window x:Class="PressingManager.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:PressingManager.App.Localization"
         Title="Pressing Manager"
         Height="720"
         Width="1200"
@@ -142,7 +143,7 @@
 
                         <!-- TITRE -->
                         <TextBlock x:Name="txtWelcome"
-                                   Text="Bienvenue !"
+                                   Text="{loc:T Login_Welcome}"
                                    FontSize="36"
                                    FontWeight="Bold"
                                    Foreground="#123D7A"
@@ -178,7 +179,7 @@
                                         </Style>
                                     </StackPanel.Style>
 
-                                    <TextBlock Text="Nom complet"
+                                    <TextBlock Text="{loc:T Login_FullName}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="#123D7A"
@@ -196,7 +197,7 @@
 
                                 <!-- NOM UTILISATEUR -->
                                 <TextBlock x:Name="txtUsernameLabel"
-                                           Text="Nom d'utilisateur"
+                                           Text="{loc:T Login_Username}"
                                            FontSize="16"
                                            FontWeight="SemiBold"
                                            Foreground="#123D7A"
@@ -230,7 +231,7 @@
 
                                 <!-- MOT DE PASSE -->
                                 <TextBlock x:Name="txtPasswordLabel"
-                                           Text="Mot de passe"
+                                           Text="{loc:T Login_Password}"
                                            FontSize="16"
                                            FontWeight="SemiBold"
                                            Foreground="#123D7A"
@@ -280,7 +281,7 @@
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Cursor="Hand"
-                                                ToolTip="Afficher le mot de passe"
+                                                ToolTip="{loc:T Login_ShowPassword}"
                                                 Click="BtnTogglePassword_Click"/>
                                     </Grid>
                                 </Border>
@@ -301,7 +302,7 @@
                                         </Style>
                                     </StackPanel.Style>
 
-                                    <TextBlock Text="Confirmer le mot de passe"
+                                    <TextBlock Text="{loc:T Login_ConfirmPassword}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="#123D7A"
@@ -342,7 +343,7 @@
                                                     Background="Transparent"
                                                     BorderThickness="0"
                                                     Cursor="Hand"
-                                                    ToolTip="Afficher le mot de passe"
+                                                    ToolTip="{loc:T Login_ShowPassword}"
                                                     Click="BtnToggleConfirmPassword_Click"/>
                                         </Grid>
                                     </Border>
@@ -357,7 +358,7 @@
 
                                 <!-- SE SOUVENIR DE MOI -->
                                 <CheckBox x:Name="chkRemember"
-                                          Content="Se souvenir de moi"
+                                          Content="{loc:T Login_Remember}"
                                           FontSize="15"
                                           Foreground="#174A91"
                                           Margin="0,0,0,22"/>
@@ -371,7 +372,7 @@
 
                                 <!-- MOT DE PASSE OUBLIÉ -->
                                 <TextBlock x:Name="txtForgotPassword"
-                                           Text="Mot de passe oublié ?"
+                                           Text="{loc:T Login_Forgot}"
                                            Foreground="#0864D9"
                                            FontSize="15"
                                            FontWeight="SemiBold"
@@ -386,7 +387,7 @@
 
                 <!-- PIED DE PAGE -->
                 <TextBlock Grid.Row="2"
-                           Text="© 2026 Pressing Manager. Tous droits réservés."
+                           Text="{loc:T Login_Footer}"
                            Foreground="#174A91"
                            FontSize="12"
                            HorizontalAlignment="Center"

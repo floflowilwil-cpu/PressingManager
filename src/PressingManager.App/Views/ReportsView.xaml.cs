@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using Microsoft.Win32;
+using PressingManager.App.Localization;
 using PressingManager.App.ViewModels;
 
 namespace PressingManager.App.Views;
@@ -38,7 +39,7 @@ public partial class ReportsView : UserControl
 
     private async void BtnExportCsv_Click(object sender, RoutedEventArgs e)
     {
-        var path = AskFilePath("Fichier CSV (Excel)|*.csv", ".csv");
+        var path = AskFilePath(Loc.Instance["Stats_FilterCsv"], ".csv");
         if (path is not null)
         {
             await _viewModel.ExportAsync(path, asPdf: false);
@@ -47,7 +48,7 @@ public partial class ReportsView : UserControl
 
     private async void BtnExportPdf_Click(object sender, RoutedEventArgs e)
     {
-        var path = AskFilePath("Document PDF|*.pdf", ".pdf");
+        var path = AskFilePath(Loc.Instance["Stats_FilterPdf"], ".pdf");
         if (path is not null)
         {
             await _viewModel.ExportAsync(path, asPdf: true);

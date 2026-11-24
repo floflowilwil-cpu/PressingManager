@@ -1,0 +1,261 @@
+namespace PressingManager.App.Localization;
+
+/// <summary>
+/// Tous les textes de l'interface, en francais et en anglais.
+/// Pour ajouter un texte : une ligne dans Fr et la meme cle dans En. Prefixes : Nav_, Login_, Stats_, Users_, Status_, Role_.
+/// Les messages d'erreur renvoyes par les services (BusinessRuleException, etc.) restent en francais.
+/// </summary>
+internal static class Strings
+{
+    public static string Get(AppLanguage language, string key)
+    {
+        if (language == AppLanguage.En && En.TryGetValue(key, out var english))
+        {
+            return english;
+        }
+
+        return Fr.TryGetValue(key, out var french) ? french : key;
+    }
+
+    private static readonly Dictionary<string, string> Fr = new()
+    {
+        // Menu et tableau de bord
+        ["Nav_MainMenu"] = "MENU PRINCIPAL",
+        ["Nav_Dashboard"] = "Tableau de bord",
+        ["Nav_Clients"] = "Clients",
+        ["Nav_Orders"] = "Commandes",
+        ["Nav_Garments"] = "Vêtements",
+        ["Nav_Payments"] = "Paiements",
+        ["Nav_Statistics"] = "Statistiques",
+        ["Nav_Users"] = "Utilisateurs",
+        ["Dashboard_Title"] = "Pressing Manager - Tableau de bord",
+        ["Dashboard_Welcome"] = "Bienvenue !",
+        ["Dashboard_Subtitle"] = "Voici un aperçu de votre activité.",
+        ["Dashboard_Overview"] = "Vue d'ensemble",
+
+        // Connexion
+        ["Login_Welcome"] = "Bienvenue !",
+        ["Login_FullName"] = "Nom complet",
+        ["Login_Username"] = "Nom d'utilisateur",
+        ["Login_Password"] = "Mot de passe",
+        ["Login_ConfirmPassword"] = "Confirmer le mot de passe",
+        ["Login_Remember"] = "Se souvenir de moi",
+        ["Login_Forgot"] = "Mot de passe oublié ?",
+        ["Login_Footer"] = "© 2026 Pressing Manager. Tous droits réservés.",
+        ["Login_ShowPassword"] = "Afficher le mot de passe",
+        ["Login_HidePassword"] = "Masquer le mot de passe",
+        ["Login_Subtitle_Signin"] = "Connexion",
+        ["Login_Subtitle_Setup"] = "Première utilisation : créez le compte administrateur",
+        ["Login_Submit_Signin"] = "Se connecter",
+        ["Login_Submit_Setup"] = "Créer le compte et se connecter",
+        ["Login_PasswordsMismatch"] = "Les mots de passe ne correspondent pas.",
+        ["Login_DbError"] = "Impossible d'accéder à la base de données : {0}",
+        ["Login_Unexpected"] = "Erreur inattendue : {0}",
+
+        // Statuts de commande
+        ["Status_Received"] = "Reçu",
+        ["Status_AwaitingProcessing"] = "En attente de traitement",
+        ["Status_Cleaning"] = "En nettoyage",
+        ["Status_Ironing"] = "En repassage",
+        ["Status_ReadyForPickup"] = "Prêt à récupérer",
+        ["Status_Delivered"] = "Livré",
+        ["Status_Cancelled"] = "Annulé",
+
+        // Rôles
+        ["Role_Administrator"] = "Administrateur",
+        ["Role_FrontDesk"] = "Agent d'accueil",
+        ["Role_Cashier"] = "Caissier",
+        ["Role_Processor"] = "Agent de traitement",
+        ["Role_StockManager"] = "Responsable stock",
+
+        // Statistiques
+        ["Stats_AccessDenied"] = "Les statistiques sont réservées à l'administrateur.",
+        ["Stats_Title"] = "Rapports & Statistiques",
+        ["Stats_Subtitle"] = "Recettes, dépenses et bénéfice sur la période choisie.",
+        ["Stats_Period7"] = "7 j",
+        ["Stats_Period30"] = "30 j",
+        ["Stats_Period90"] = "3 mois",
+        ["Stats_Period365"] = "1 an",
+        ["Stats_Export"] = "Exporter  ⌄",
+        ["Stats_ExportCsv"] = "Exporter en CSV (Excel)",
+        ["Stats_ExportPdf"] = "Exporter en PDF",
+        ["Stats_Revenue"] = "Recettes",
+        ["Stats_Expenses"] = "Dépenses",
+        ["Stats_Profit"] = "Bénéfice",
+        ["Stats_New"] = "Nouveau",
+        ["Stats_TrendTitle"] = "Évolution des recettes",
+        ["Stats_NoChartData"] = "Aucune recette ni dépense sur cette période.",
+        ["Stats_BarTooltip"] = "{0}\nRecettes : {1}\nDépenses : {2}",
+        ["Stats_ServicesTitle"] = "Répartition des services",
+        ["Stats_NoServiceData"] = "Aucune commande sur cette période.",
+        ["Stats_Billed"] = "facturé",
+        ["Stats_Others"] = "Autres",
+        ["Stats_TabOrders"] = "Commandes de la période",
+        ["Stats_TabDue"] = "Soldes dus",
+        ["Stats_TabPickup"] = "À récupérer",
+        ["Stats_AllStatuses"] = "Tous les statuts",
+        ["Stats_FilterCsv"] = "Fichier CSV (Excel)|*.csv",
+        ["Stats_FilterPdf"] = "Document PDF|*.pdf",
+        ["Stats_ColNumber"] = "N° commande",
+        ["Stats_ColDate"] = "Date",
+        ["Stats_ColCustomer"] = "Client",
+        ["Stats_ColStatus"] = "Statut",
+        ["Stats_ColTotal"] = "Total (FCFA)",
+        ["Stats_ColPaid"] = "Payé (FCFA)",
+        ["Stats_ColBalance"] = "Solde (FCFA)",
+        ["Stats_Rows"] = "{0} ligne(s)",
+        ["Stats_NoDates"] = "Choisissez une date de début et une date de fin.",
+        ["Stats_ExportDone"] = "Export terminé : {0}",
+        ["Stats_FileError"] = "Impossible d'écrire le fichier (est-il ouvert dans un autre programme ?) : {0}",
+        ["Stats_DescOrders"] = "Commandes du {0} au {1}",
+        ["Stats_DescDue"] = "Soldes impayés au {0}",
+        ["Stats_DescPickup"] = "Commandes prêtes à récupérer au {0}",
+
+        // Utilisateurs
+        ["Users_Title"] = "Utilisateurs",
+        ["Users_Subtitle"] = "Comptes, rôles et accès à l'application",
+        ["Users_NewAccount"] = "Nouveau compte",
+        ["Users_FullName"] = "Nom complet",
+        ["Users_Username"] = "Nom d'utilisateur",
+        ["Users_Password"] = "Mot de passe",
+        ["Users_Role"] = "Rôle",
+        ["Users_Create"] = "Créer le compte",
+        ["Users_Selected"] = "Compte sélectionné",
+        ["Users_Toggle"] = "Activer / désactiver",
+        ["Users_NewPassword"] = "Nouveau mot de passe",
+        ["Users_Reset"] = "Réinitialiser le mot de passe",
+        ["Users_RecoveryButton"] = "Générer un code de récupération",
+        ["Users_ColName"] = "Nom",
+        ["Users_ColUser"] = "Utilisateur",
+        ["Users_ColRole"] = "Rôle",
+        ["Users_ColActive"] = "Actif",
+        ["Users_ColLastLogin"] = "Dernière connexion",
+        ["Users_AccessDenied"] = "La gestion des utilisateurs est réservée à l'administrateur.",
+        ["Users_Created"] = "Compte créé.",
+        ["Users_StatusUpdated"] = "Statut du compte mis à jour.",
+        ["Users_PasswordReset"] = "Mot de passe réinitialisé.",
+        ["Users_SelectFirst"] = "Sélectionnez d'abord un utilisateur dans la liste.",
+        ["Users_RecoveryShown"] = "Code de récupération de {0} : {1} — notez-le et remettez-le à l'utilisateur, il ne sera plus affiché."
+    };
+
+    private static readonly Dictionary<string, string> En = new()
+    {
+        // Menu and dashboard
+        ["Nav_MainMenu"] = "MAIN MENU",
+        ["Nav_Dashboard"] = "Dashboard",
+        ["Nav_Clients"] = "Customers",
+        ["Nav_Orders"] = "Orders",
+        ["Nav_Garments"] = "Garments",
+        ["Nav_Payments"] = "Payments",
+        ["Nav_Statistics"] = "Statistics",
+        ["Nav_Users"] = "Users",
+        ["Dashboard_Title"] = "Pressing Manager - Dashboard",
+        ["Dashboard_Welcome"] = "Welcome!",
+        ["Dashboard_Subtitle"] = "Here is an overview of your activity.",
+        ["Dashboard_Overview"] = "Overview",
+
+        // Login
+        ["Login_Welcome"] = "Welcome!",
+        ["Login_FullName"] = "Full name",
+        ["Login_Username"] = "Username",
+        ["Login_Password"] = "Password",
+        ["Login_ConfirmPassword"] = "Confirm password",
+        ["Login_Remember"] = "Remember me",
+        ["Login_Forgot"] = "Forgot password?",
+        ["Login_Footer"] = "© 2026 Pressing Manager. All rights reserved.",
+        ["Login_ShowPassword"] = "Show password",
+        ["Login_HidePassword"] = "Hide password",
+        ["Login_Subtitle_Signin"] = "Sign in",
+        ["Login_Subtitle_Setup"] = "First-time setup: create the administrator account",
+        ["Login_Submit_Signin"] = "Sign in",
+        ["Login_Submit_Setup"] = "Create account and sign in",
+        ["Login_PasswordsMismatch"] = "The passwords do not match.",
+        ["Login_DbError"] = "Unable to access the database: {0}",
+        ["Login_Unexpected"] = "Unexpected error: {0}",
+
+        // Order statuses
+        ["Status_Received"] = "Received",
+        ["Status_AwaitingProcessing"] = "Awaiting processing",
+        ["Status_Cleaning"] = "Cleaning",
+        ["Status_Ironing"] = "Ironing",
+        ["Status_ReadyForPickup"] = "Ready for pickup",
+        ["Status_Delivered"] = "Delivered",
+        ["Status_Cancelled"] = "Cancelled",
+
+        // Roles
+        ["Role_Administrator"] = "Administrator",
+        ["Role_FrontDesk"] = "Front desk agent",
+        ["Role_Cashier"] = "Cashier",
+        ["Role_Processor"] = "Processing agent",
+        ["Role_StockManager"] = "Stock manager",
+
+        // Statistics
+        ["Stats_AccessDenied"] = "Statistics are reserved for the administrator.",
+        ["Stats_Title"] = "Reports & Statistics",
+        ["Stats_Subtitle"] = "Revenue, expenses and profit for the selected period.",
+        ["Stats_Period7"] = "7 d",
+        ["Stats_Period30"] = "30 d",
+        ["Stats_Period90"] = "3 mo",
+        ["Stats_Period365"] = "1 yr",
+        ["Stats_Export"] = "Export  ⌄",
+        ["Stats_ExportCsv"] = "Export as CSV (Excel)",
+        ["Stats_ExportPdf"] = "Export as PDF",
+        ["Stats_Revenue"] = "Revenue",
+        ["Stats_Expenses"] = "Expenses",
+        ["Stats_Profit"] = "Profit",
+        ["Stats_New"] = "New",
+        ["Stats_TrendTitle"] = "Revenue trend",
+        ["Stats_NoChartData"] = "No revenue or expenses in this period.",
+        ["Stats_BarTooltip"] = "{0}\nRevenue: {1}\nExpenses: {2}",
+        ["Stats_ServicesTitle"] = "Service breakdown",
+        ["Stats_NoServiceData"] = "No orders in this period.",
+        ["Stats_Billed"] = "billed",
+        ["Stats_Others"] = "Others",
+        ["Stats_TabOrders"] = "Orders in period",
+        ["Stats_TabDue"] = "Balances due",
+        ["Stats_TabPickup"] = "To pick up",
+        ["Stats_AllStatuses"] = "All statuses",
+        ["Stats_FilterCsv"] = "CSV file (Excel)|*.csv",
+        ["Stats_FilterPdf"] = "PDF document|*.pdf",
+        ["Stats_ColNumber"] = "Order no.",
+        ["Stats_ColDate"] = "Date",
+        ["Stats_ColCustomer"] = "Customer",
+        ["Stats_ColStatus"] = "Status",
+        ["Stats_ColTotal"] = "Total (FCFA)",
+        ["Stats_ColPaid"] = "Paid (FCFA)",
+        ["Stats_ColBalance"] = "Balance (FCFA)",
+        ["Stats_Rows"] = "{0} row(s)",
+        ["Stats_NoDates"] = "Please choose a start date and an end date.",
+        ["Stats_ExportDone"] = "Export completed: {0}",
+        ["Stats_FileError"] = "Unable to write the file (is it open in another program?): {0}",
+        ["Stats_DescOrders"] = "Orders from {0} to {1}",
+        ["Stats_DescDue"] = "Outstanding balances as of {0}",
+        ["Stats_DescPickup"] = "Orders ready for pickup as of {0}",
+
+        // Users
+        ["Users_Title"] = "Users",
+        ["Users_Subtitle"] = "Accounts, roles and access to the application",
+        ["Users_NewAccount"] = "New account",
+        ["Users_FullName"] = "Full name",
+        ["Users_Username"] = "Username",
+        ["Users_Password"] = "Password",
+        ["Users_Role"] = "Role",
+        ["Users_Create"] = "Create account",
+        ["Users_Selected"] = "Selected account",
+        ["Users_Toggle"] = "Enable / disable",
+        ["Users_NewPassword"] = "New password",
+        ["Users_Reset"] = "Reset password",
+        ["Users_RecoveryButton"] = "Generate a recovery code",
+        ["Users_ColName"] = "Name",
+        ["Users_ColUser"] = "Username",
+        ["Users_ColRole"] = "Role",
+        ["Users_ColActive"] = "Active",
+        ["Users_ColLastLogin"] = "Last sign-in",
+        ["Users_AccessDenied"] = "User management is reserved for the administrator.",
+        ["Users_Created"] = "Account created.",
+        ["Users_StatusUpdated"] = "Account status updated.",
+        ["Users_PasswordReset"] = "Password reset.",
+        ["Users_SelectFirst"] = "Please select a user in the list first.",
+        ["Users_RecoveryShown"] = "Recovery code for {0}: {1} — write it down and give it to the user, it will not be shown again."
+    };
+}

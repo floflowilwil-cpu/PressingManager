@@ -1,6 +1,7 @@
-
+﻿
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PressingManager.App.Localization;
 using PressingManager.Core.Common;
 using PressingManager.Core.Interfaces;
 
@@ -17,6 +18,9 @@ public partial class LoginViewModel : ObservableObject
     public LoginViewModel(IAuthService auth)
     {
         _auth = auth;
+
+        // Le sous-titre et le libelle du bouton suivent la langue choisie.
+        Loc.Instance.LanguageChanged += (_, _) => OnPropertyChanged(string.Empty);
     }
 
     [ObservableProperty]
@@ -41,25 +45,9 @@ public partial class LoginViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(Subtitle), nameof(SubmitLabel))]
     private bool _isSetupMode;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Subtitle), nameof(SubmitLabel))]
-    private bool _isEnglish;
+    public string Subtitle => Loc.Instance[IsSetupMode ? "Login_Subtitle_Setup" : "Login_Subtitle_Signin"];
 
-    public string Subtitle => IsEnglish
-        ? (IsSetupMode
-            ? "First-time setup: create the administrator account"
-            : "Sign in")
-        : (IsSetupMode
-            ? "Première utilisation : créez le compte administrateur"
-            : "Connexion");
-
-    public string SubmitLabel => IsEnglish
-        ? (IsSetupMode
-            ? "Create account and sign in"
-            : "Sign in")
-        : (IsSetupMode
-            ? "Créer le compte et se connecter"
-            : "Se connecter");
+    public string SubmitLabel => Loc.Instance[IsSetupMode ? "Login_Submit_Setup" : "Login_Submit_Signin"];
 
     /// <summary>
     /// Levé quand l'utilisateur est connecté.
@@ -74,7 +62,7 @@ public partial class LoginViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Impossible d'accéder à la base de données : {ex.Message}";
+            ErrorMessage = Loc.Instance.Format("Login_DbError", ex.Message);
         }
     }
 
@@ -95,7 +83,7 @@ public partial class LoginViewModel : ObservableObject
             {
                 if (Password != ConfirmPassword)
                 {
-                    ErrorMessage = "Les mots de passe ne correspondent pas.";
+                    ErrorMessage = Loc.Instance["Login_PasswordsMismatch"];
                     return;
                 }
 
@@ -124,7 +112,7 @@ public partial class LoginViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Erreur inattendue : {ex.Message}";
+            ErrorMessage = Loc.Instance.Format("Login_Unexpected", ex.Message);
         }
         finally
         {

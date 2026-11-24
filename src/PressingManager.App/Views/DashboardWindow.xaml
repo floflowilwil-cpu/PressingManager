@@ -2,7 +2,8 @@
 <Window x:Class="PressingManager.App.Views.DashboardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Pressing Manager - Tableau de bord"
+        xmlns:loc="clr-namespace:PressingManager.App.Localization"
+        Title="{loc:T Dashboard_Title}"
         Height="720"
         Width="1200"
         MinHeight="650"
@@ -113,38 +114,38 @@
                 </StackPanel>
 
                 <StackPanel>
-                    <TextBlock Text="MENU PRINCIPAL"
+                    <TextBlock Text="{loc:T Nav_MainMenu}"
                                Foreground="#91A8C2"
                                FontSize="11"
                                FontWeight="SemiBold"
                                Margin="22,0,0,15"/>
 
                     <Button x:Name="BtnDashboard"
-                            Content="Tableau de bord"
+                            Content="{loc:T Nav_Dashboard}"
                             Style="{StaticResource ActiveSidebarButton}"
                             Click="BtnDashboard_Click"/>
 
-                    <Button Content="Clients"
+                    <Button Content="{loc:T Nav_Clients}"
                             Style="{StaticResource SidebarButton}"/>
 
-                    <Button Content="Commandes"
+                    <Button Content="{loc:T Nav_Orders}"
                             Style="{StaticResource SidebarButton}"/>
 
-                    <Button Content="Vêtements"
+                    <Button Content="{loc:T Nav_Garments}"
                             Style="{StaticResource SidebarButton}"/>
 
                     <Button x:Name="BtnPayments"
-                            Content="Paiements"
+                            Content="{loc:T Nav_Payments}"
                             Style="{StaticResource SidebarButton}"
                             Click="BtnPayments_Click"/>
 
                     <Button x:Name="BtnStatistics"
-                            Content="Statistiques"
+                            Content="{loc:T Nav_Statistics}"
                             Style="{StaticResource SidebarButton}"
                             Click="BtnStatistics_Click"/>
 
                     <Button x:Name="BtnUsers"
-                            Content="Utilisateurs"
+                            Content="{loc:T Nav_Users}"
                             Style="{StaticResource SidebarButton}"
                             Click="BtnUsers_Click"/>
                 </StackPanel>
@@ -168,19 +169,19 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0">
-                <TextBlock Text="Bienvenue !"
+                <TextBlock Text="{loc:T Dashboard_Welcome}"
                            FontSize="28"
                            FontWeight="Bold"
                            Foreground="#12365D"/>
 
-                <TextBlock Text="Voici un aperçu de votre activité."
+                <TextBlock Text="{loc:T Dashboard_Subtitle}"
                            FontSize="14"
                            Foreground="#718096"
                            Margin="0,8,0,25"/>
             </StackPanel>
 
             <TextBlock Grid.Row="1"
-                       Text="Vue d'ensemble"
+                       Text="{loc:T Dashboard_Overview}"
                        FontSize="19"
                        FontWeight="SemiBold"
                        Foreground="#12365D"
@@ -296,7 +297,7 @@
         <!-- MODULE RAPPORTS ET STATISTIQUES (Personne 5) : meme zone blanche, le menu reste visible -->
         <ContentControl x:Name="StatisticsContentHost" Grid.Column="1" Visibility="Collapsed"/>
 
-        <!-- MODULE UTILISATEURS (Personne 5) -->
+        <!-- MODULE UTILISATEURS (Personne 5) : meme zone blanche -->
         <ContentControl x:Name="UsersContentHost" Grid.Column="1" Visibility="Collapsed"/>
     </Grid>
 </Window>
