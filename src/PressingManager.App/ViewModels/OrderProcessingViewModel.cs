@@ -18,6 +18,9 @@ public sealed record StatusOption(OrderStatus Value, string Label)
 /// <summary>Etape visuelle dans la barre de progression d'une commande.</summary>
 public sealed record StatusStepItem(OrderStatus Status, string Label, bool IsReached, bool IsCurrent);
 
+/// <summary>Demande d'ouverture de l'ecran d'encaissement pour une commande donnee.</summary>
+public sealed record PayOrderRequest(int OrderId, PaymentMethod? PreferredMethod = null);
+
 /// <summary>Filtre de la file de traitement : a traiter, en retard, toutes les commandes ou un statut precis.</summary>
 public sealed record ProcessingFilterOption(string Key, OrderStatus? Status, bool OverdueOnly, string Label)
 {
@@ -135,7 +138,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
     public Func<string, bool> Confirm { get; set; } = _ => true;
 
     /// <summary>Declenche la navigation vers l'onglet Paiements pour l'identifiant de commande demande.</summary>
-    public event EventHandler<int>? PayOrderRequested;
+    public event EventHandler<PayOrderRequest>? PayOrderRequested;
 
     public bool CanView => Session.HasPermission(Permission.ViewOrders);
 
@@ -225,7 +228,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
             return;
         }
 
-        PayOrderRequested?.Invoke(this, SelectedOrder.OrderId);
+        PayOrderRequested?.Invoke(this, new PayOrderRequest(SelectedOrder.OrderId));
     }
 
     [RelayCommand]
@@ -313,7 +316,10 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
     }, successKey: null);
 
     /// <summary>Appele apres creation d'une commande dans NewOrderWindow.</summary>
-    public async Task HandleOrderCreatedAsync(OrderDetailsDto created, bool openPayment)
+    public async Task HandleOrderCreatedAsync(
+        OrderDetailsDto created,
+        bool openPayment,
+        PaymentMethod? preferredMethod = null)
     {
         ArgumentNullException.ThrowIfNull(created);
 
@@ -339,7 +345,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
 
         if (openPayment && CanPayOrder)
         {
-            PayOrderRequested?.Invoke(this, created.Id);
+            PayOrderRequested?.Invoke(this, new PayOrderRequest(created.Id, preferredMethod));
         }
     }
 

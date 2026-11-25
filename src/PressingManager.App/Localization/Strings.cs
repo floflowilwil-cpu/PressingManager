@@ -516,7 +516,12 @@ internal static class Strings
         ["Settings_Momo_Username"] = "App Username Campay",
         ["Settings_Momo_Password"] = "App Password Campay",
         ["Settings_Momo_SaveBtn"] = "Enregistrer Mobile Money",
-        ["Settings_Momo_Saved"] = "Paramètres Mobile Money enregistrés."
+        ["Settings_Momo_Saved"] = "Paramètres Mobile Money enregistrés.",
+
+        ["Ord_Dlg_SelectedEmail"] = "E-mail du client sélectionné (reçus & suivi)",
+        ["Ord_Dlg_SaveEmailBtn"] = "Enregistrer l'e-mail",
+        ["Ord_Dlg_EmailSaved"] = "E-mail du client enregistré.",
+        ["Ord_Dlg_PaymentMethod"] = "Mode de paiement (encaissement)"
     };
 
     private static readonly Dictionary<string, string> En = new()
@@ -1018,6 +1023,11 @@ internal static class Strings
         ["Settings_Momo_Username"] = "Campay App Username",
         ["Settings_Momo_Password"] = "Campay App Password",
         ["Settings_Momo_SaveBtn"] = "Save Mobile Money",
-        ["Settings_Momo_Saved"] = "Mobile Money settings saved."
+        ["Settings_Momo_Saved"] = "Mobile Money settings saved.",
+
+        ["Ord_Dlg_SelectedEmail"] = "Selected customer email (receipts & tracking)",
+        ["Ord_Dlg_SaveEmailBtn"] = "Save email",
+        ["Ord_Dlg_EmailSaved"] = "Customer email saved.",
+        ["Ord_Dlg_PaymentMethod"] = "Payment method (checkout)"
     };
 }

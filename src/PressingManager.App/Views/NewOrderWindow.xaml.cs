@@ -1,6 +1,7 @@
 using System.Windows;
 using PressingManager.App.ViewModels;
 using PressingManager.Core.DTOs;
+using PressingManager.Core.Enums;
 using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.Views;
@@ -31,6 +32,8 @@ public partial class NewOrderWindow : Window
     public OrderDetailsDto? CreatedOrder => _viewModel.CreatedOrder;
 
     public bool OpenPaymentAfterCreate => _viewModel.OpenPaymentAfterCreate;
+
+    public PaymentMethod SelectedPaymentMethod => _viewModel.SelectedPaymentMethod;
 
     private void OnOrderCreated(object? sender, EventArgs e)
     {

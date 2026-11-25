@@ -76,8 +76,8 @@ public partial class DashboardWindow : Window
         UsersHost.Content = _userManagementView;
         SettingsHost.Content = _settingsView;
 
-        _orderProcessingView.PayOrderRequested += async (_, orderId) =>
-            await OpenPaymentForOrderAsync(orderId);
+        _orderProcessingView.PayOrderRequested += async (_, request) =>
+            await OpenPaymentForOrderAsync(request);
 
         // La fenetre est creee avant la connexion : on lit les droits au moment ou elle s'affiche.
         // Confort visuel seulement : le vrai controle d'acces est fait dans les services.
@@ -227,13 +227,13 @@ public partial class DashboardWindow : Window
         }
     }
 
-    private async Task OpenPaymentForOrderAsync(int orderId)
+    private async Task OpenPaymentForOrderAsync(PayOrderRequest request)
     {
         SwitchSection(Section.Payments);
 
         if (_paymentManagementView.DataContext is PaymentManagementViewModel vm)
         {
-            await vm.LoadOrderByIdAsync(orderId);
+            await vm.LoadOrderByIdAsync(request.OrderId, request.PreferredMethod);
         }
     }
 

@@ -34,7 +34,7 @@ public partial class OrderProcessingView : UserControl
         _session = session ?? throw new ArgumentNullException(nameof(session));
 
         DataContext = viewModel;
-        _viewModel.PayOrderRequested += (_, orderId) => PayOrderRequested?.Invoke(this, orderId);
+        _viewModel.PayOrderRequested += (_, request) => PayOrderRequested?.Invoke(this, request);
 
         // Confirmation avant une annulation (documentation, section 10.3).
         viewModel.Confirm = text =>
@@ -45,7 +45,7 @@ public partial class OrderProcessingView : UserControl
                 MessageBoxImage.Warning) == MessageBoxResult.Yes;
     }
 
-    public event EventHandler<int>? PayOrderRequested;
+    public event EventHandler<PayOrderRequest>? PayOrderRequested;
 
     /// <summary>Recharge la file (appele a chaque ouverture de l'onglet ; sans effet sans le droit ViewOrders).</summary>
     public Task RefreshAsync() =>
@@ -60,7 +60,10 @@ public partial class OrderProcessingView : UserControl
 
         if (dialog.ShowDialog() == true && dialog.CreatedOrder is { } created)
         {
-            await _viewModel.HandleOrderCreatedAsync(created, dialog.OpenPaymentAfterCreate);
+            await _viewModel.HandleOrderCreatedAsync(
+                created,
+                dialog.OpenPaymentAfterCreate,
+                dialog.SelectedPaymentMethod);
         }
     }
 }

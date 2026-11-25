@@ -77,7 +77,13 @@ public partial class NewOrderViewModel : ModuleViewModelBase
 
     public bool HasNoCustomers => Customers.Count == 0;
 
+    public bool HasSelectedCustomer => SelectedCustomer is not null;
+
     public bool HasNoServices => Services.Count == 0;
+
+    public IReadOnlyList<PaymentMethodOption> PaymentMethods { get; } = Enum.GetValues<PaymentMethod>()
+        .Select(m => new PaymentMethodOption(m, Loc.Instance.PaymentMethod(m)))
+        .ToList();
 
     public string SubtotalText => MoneyFormatter.FormatFcfa(Subtotal);
 
@@ -90,7 +96,14 @@ public partial class NewOrderViewModel : ModuleViewModelBase
     public event EventHandler? OrderCreated;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedCustomer))]
     private CustomerOption? _selectedCustomer;
+
+    [ObservableProperty]
+    private string _selectedCustomerEmail = string.Empty;
+
+    [ObservableProperty]
+    private PaymentMethod _selectedPaymentMethod = PaymentMethod.Cash;
 
     [ObservableProperty]
     private ServiceOption? _selectedService;
@@ -138,6 +151,11 @@ public partial class NewOrderViewModel : ModuleViewModelBase
     public bool IsNotBusy => !IsBusy;
 
     private decimal Subtotal => Items.Sum(i => i.LineTotal);
+
+    partial void OnSelectedCustomerChanged(CustomerOption? value)
+    {
+        SelectedCustomerEmail = value?.Email ?? string.Empty;
+    }
 
     partial void OnSelectedServiceChanged(ServiceOption? value)
     {
@@ -251,6 +269,43 @@ public partial class NewOrderViewModel : ModuleViewModelBase
     }
 
     [RelayCommand]
+    private Task SaveSelectedCustomerEmailAsync() => RunAsync(
+        PersistSelectedCustomerEmailAsync,
+        "Ord_Dlg_EmailSaved");
+
+    private async Task PersistSelectedCustomerEmailAsync()
+    {
+        var current = SelectedCustomer
+            ?? throw new BusinessRuleException(Loc.Instance["Ord_Err_SelectCustomer"]);
+
+        var full = await _customers.GetByIdAsync(current.Id)
+            ?? throw new BusinessRuleException(Loc.Instance["Ord_Err_SelectCustomer"]);
+
+        var updated = await _customers.UpdateAsync(new UpdateCustomerDto(
+            full.Id,
+            full.FullName,
+            full.Phone,
+            full.Address,
+            full.Notes,
+            SelectedCustomerEmail));
+
+        var refreshed = new CustomerOption(
+            updated.Id,
+            updated.FullName,
+            updated.Phone,
+            updated.CustomerNumber,
+            updated.Email);
+
+        var index = Customers.IndexOf(current);
+        if (index >= 0)
+        {
+            Customers[index] = refreshed;
+        }
+
+        SelectedCustomer = refreshed;
+    }
+
+    [RelayCommand]
     private Task CreateOrderAsync() => SaveOrderAsync(openPayment: false);
 
     [RelayCommand]
@@ -276,6 +331,16 @@ public partial class NewOrderViewModel : ModuleViewModelBase
 
             var customer = SelectedCustomer
                 ?? throw new BusinessRuleException(Loc.Instance["Ord_Err_SelectCustomer"]);
+
+            if (CanManageCustomers
+                && !string.Equals(
+                    (SelectedCustomerEmail ?? string.Empty).Trim(),
+                    (customer.Email ?? string.Empty).Trim(),
+                    StringComparison.Ordinal))
+            {
+                await PersistSelectedCustomerEmailAsync();
+                customer = SelectedCustomer!;
+            }
 
             // Confort UX : si l'utilisateur a saisi un article sans cliquer sur "+ Ajouter", on l'ajoute avant de valider.
             if (Items.Count == 0)

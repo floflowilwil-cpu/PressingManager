@@ -430,7 +430,7 @@ public sealed class CustomerManagementView : UserControl
         form.Children.Add(Caption("Notes"));
         form.Children.Add(_notes);
 
-        var buttons = new WrapPanel { Margin = new Thickness(0, 20, 0, 0) };
+        var buttons = new WrapPanel { Margin = new Thickness(0, 14, 0, 0) };
         buttons.Children.Add(_saveButton);
         buttons.Children.Add(_newButton);
         buttons.Children.Add(_toggleButton);
@@ -438,8 +438,15 @@ public sealed class CustomerManagementView : UserControl
 
         form.Children.Add(_message);
 
-        var card = Card(form);
-        card.VerticalAlignment = VerticalAlignment.Top;
+        var scroll = new ScrollViewer
+        {
+            Content = form,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+        };
+
+        var card = Card(scroll);
+        card.VerticalAlignment = VerticalAlignment.Stretch;
         return card;
     }
 
@@ -477,7 +484,7 @@ public sealed class CustomerManagementView : UserControl
         {
             box.AcceptsReturn = true;
             box.TextWrapping = TextWrapping.Wrap;
-            box.Height = 90;
+            box.Height = 64;
             box.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
             box.VerticalContentAlignment = VerticalAlignment.Top;
         }

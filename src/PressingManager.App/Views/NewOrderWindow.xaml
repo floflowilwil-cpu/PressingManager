@@ -65,6 +65,26 @@
                                   SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}"
                                   DisplayMemberPath="DisplayLabel" />
 
+                        <!-- Edition directe de l'e-mail du client selectionne -->
+                        <Grid Margin="0,10,0,0" Visibility="{Binding HasSelectedCustomer, Converter={StaticResource BoolToVisibility}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="{loc:T Ord_Dlg_SelectedEmail}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding SelectedCustomerEmail, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    Content="{loc:T Ord_Dlg_SaveEmailBtn}"
+                                    Command="{Binding SaveSelectedCustomerEmailCommand}"
+                                    Style="{StaticResource BtnLight}"
+                                    VerticalAlignment="Bottom"
+                                    Visibility="{Binding CanManageCustomers, Converter={StaticResource BoolToVisibility}}" />
+                        </Grid>
+
                         <TextBlock Text="{loc:T Ord_Dlg_NoCustomers}"
                                    Foreground="#D97706"
                                    FontSize="12"
@@ -241,6 +261,17 @@
                                 <TextBox Text="{Binding NotesText, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                         </Grid>
+
+                        <StackPanel Margin="0,10,0,0"
+                                    Visibility="{Binding CanRegisterPayment, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="{loc:T Ord_Dlg_PaymentMethod}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                            <ComboBox ItemsSource="{Binding PaymentMethods}"
+                                      DisplayMemberPath="Label"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding SelectedPaymentMethod, Mode=TwoWay}"
+                                      Width="280"
+                                      HorizontalAlignment="Left" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>

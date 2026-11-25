@@ -262,7 +262,7 @@ public partial class PaymentManagementViewModel : ObservableObject
     }, successKey: null);
 
     /// <summary>Charge directement une commande (utilise lors du clic sur Encaisser depuis l'onglet Commandes).</summary>
-    public Task LoadOrderByIdAsync(int orderId) => RunAsync(async () =>
+    public Task LoadOrderByIdAsync(int orderId, PaymentMethod? preferredMethod = null) => RunAsync(async () =>
     {
         Message = null;
         OnPropertyChanged(nameof(MobileMoneyModeLabel));
@@ -270,6 +270,11 @@ public partial class PaymentManagementViewModel : ObservableObject
         CurrentCashSession = await _cash.GetCurrentAsync();
         await RefreshExpensesAsync();
         await LoadOrderAndPrefillAsync(orderId);
+
+        if (preferredMethod is { } method)
+        {
+            SelectedMethod = method;
+        }
     }, successKey: null);
 
     private async Task LoadOrderAndPrefillAsync(int orderId)
