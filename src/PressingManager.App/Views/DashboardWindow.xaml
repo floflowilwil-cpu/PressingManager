@@ -126,7 +126,7 @@
                             Style="{StaticResource ActiveSidebarButton}"
                             Click="BtnDashboard_Click"/>
 
-                    <Button Content="{loc:T Nav_Clients}"
+                    <Button x:Name="BtnCustomers" Click="BtnCustomers_Click" Content="{loc:T Nav_Clients}"
                             Style="{StaticResource SidebarButton}"/>
 
                     <Button Content="{loc:T Nav_Orders}"
@@ -334,8 +334,11 @@
         <!-- MODULE RAPPORTS ET STATISTIQUES (Personne 5) : meme zone blanche, le menu reste visible -->
         <ContentControl x:Name="StatisticsContentHost" Grid.Column="1" Visibility="Collapsed"/>
 
-        <!-- MODULE UTILISATEURS (Personne 5) : meme zone blanche -->
+               <!-- MODULE UTILISATEURS (Personne 5) : meme zone blanche -->
         <ContentControl x:Name="UsersContentHost" Grid.Column="1" Visibility="Collapsed"/>
+
+        <!-- MODULE CLIENTS (Personne 2) -->
+        <ContentControl x:Name="CustomersContentHost" Grid.Column="1" Visibility="Collapsed"/>
 
     </Grid>
 </Window>

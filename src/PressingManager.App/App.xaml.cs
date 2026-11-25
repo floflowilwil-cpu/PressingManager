@@ -70,6 +70,7 @@ public partial class App : Application
             services.AddTransient<ServiceCatalogView>();
             services.AddTransient<StockViewModel>();
             services.AddTransient<StockView>();
+            services.AddTransient<CustomerManagementView>();
             services.AddTransient<MainWindow>();
             services.AddTransient<DashboardWindow>();
 
