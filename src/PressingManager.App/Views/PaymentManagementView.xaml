@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:enums="clr-namespace:PressingManager.Core.Enums;assembly=PressingManager.Core"
              xmlns:loc="clr-namespace:PressingManager.App.Localization"
-             Background="#F4F6F9">
+             Background="#F3F6FB">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
@@ -73,7 +73,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="24">
+    <Grid Margin="32">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="340" />
@@ -432,7 +432,7 @@
 
                     <TextBlock Text="{loc:T Pay_ExpenseMethod}" Style="{StaticResource FieldLabel}" />
                     <ComboBox ItemsSource="{Binding ExpenseMethods}" DisplayMemberPath="Label" SelectedValuePath="Value"
-                              SelectedValue="{Binding ExpenseMethod}" Padding="6" />
+                              SelectedValue="{Binding ExpenseMethod}" />
 
                     <TextBlock Text="{loc:T Pay_ExpenseComment}" Style="{StaticResource FieldLabel}" />
                     <TextBox Text="{Binding ExpenseComment, UpdateSourceTrigger=PropertyChanged}" Padding="7" />

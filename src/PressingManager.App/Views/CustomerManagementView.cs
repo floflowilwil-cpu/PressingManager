@@ -1,8 +1,9 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using Shapes = System.Windows.Shapes;
 using PressingManager.App.Localization;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
@@ -26,18 +27,18 @@ public sealed class CustomerManagementView : UserControl
 
     private readonly Grid _content = new();
     private readonly TextBox _search = Input();
-    private readonly CheckBox _showInactive = new() { Content = "Clients désactivés", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 12, 0) };
+    private readonly CheckBox _showInactive = new() { Content = "Clients désactivés", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 14, 0) };
     private readonly DataGrid _customersGrid = CreateGrid();
     private readonly DataGrid _ordersGrid = CreateGrid();
 
-    private readonly TextBlock _formTitle = new() { FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = Solid("#12365D") };
+    private readonly TextBlock _formTitle = new() { FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Solid("#12365D"), Margin = new Thickness(0, 0, 0, 2) };
     private readonly TextBox _name = Input(150);
     private readonly TextBox _phone = Input(30);
     private readonly TextBox _address = Input(300);
     private readonly TextBox _notes = Input(1000, multiline: true);
-    private readonly Button _saveButton = ActionButton("Créer le client", "#0864D9", "White");
-    private readonly Button _newButton = ActionButton("Nouveau", "#E2E8F0", "#12365D");
-    private readonly Button _toggleButton = ActionButton("Désactiver", "#E2E8F0", "#9B2C2C");
+    private readonly Button _saveButton = ActionButton("Créer le client", "BtnPrimary");
+    private readonly Button _newButton = ActionButton("Nouveau", "BtnLight");
+    private readonly Button _toggleButton = ActionButton("Désactiver", "BtnDanger");
     private readonly TextBlock _message = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0) };
 
     private CustomerDto? _current;
@@ -251,7 +252,7 @@ public sealed class CustomerManagementView : UserControl
         _message.Foreground = Solid(isError ? "#C53030" : "#2F855A");
     }
 
-    // ---------- Construction de l'écran ----------
+    // ---------- Construction de l'écran (même modèle que Statistiques) ----------
 
     private UIElement BuildLayout()
     {
@@ -259,17 +260,15 @@ public sealed class CustomerManagementView : UserControl
         _content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-        // En-tête
-        var header = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
-        header.Children.Add(new TextBlock { Text = "Clients", FontSize = 28, FontWeight = FontWeights.Bold, Foreground = Solid("#12365D") });
-        header.Children.Add(new TextBlock { Text = "Recherchez, créez et modifiez les fiches clients.", FontSize = 14, Foreground = Solid("#718096"), Margin = new Thickness(0, 8, 0, 0) });
+        // En-tête : pastille marine + pictogramme turquoise, comme l'onglet Statistiques
+        var header = BuildHeader("Clients", "Recherchez, créez et modifiez les fiches clients.", "IconClients");
         Grid.SetRow(header, 0);
         _content.Children.Add(header);
 
         // Corps : liste à gauche, formulaire à droite
         var body = new Grid();
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(360) });
         Grid.SetRow(body, 1);
         _content.Children.Add(body);
@@ -285,53 +284,128 @@ public sealed class CustomerManagementView : UserControl
         return _content;
     }
 
+    private static UIElement BuildHeader(string title, string subtitle, string iconKey)
+    {
+        var icon = new Shapes.Path
+        {
+            Data = (Geometry)Application.Current.FindResource(iconKey),
+            Stroke = Solid("#14B8A6"),
+            StrokeThickness = 2,
+            StrokeLineJoin = PenLineJoin.Round,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round
+        };
+
+        var canvas = new Canvas { Width = 24, Height = 24 };
+        canvas.Children.Add(icon);
+
+        var badge = new Border
+        {
+            Width = 38,
+            Height = 38,
+            CornerRadius = new CornerRadius(10),
+            Background = Solid("#0F2A4A"),
+            Margin = new Thickness(0, 0, 12, 0),
+            Child = new Viewbox { Width = 22, Height = 22, Child = canvas }
+        };
+
+        var texts = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        texts.Children.Add(new TextBlock { Text = title, FontSize = 22, FontWeight = FontWeights.Bold, Foreground = Solid("#0F2A4A") });
+        texts.Children.Add(new TextBlock { Text = subtitle, FontSize = 12, Foreground = Solid("#64748B") });
+
+        var header = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 22)
+        };
+        header.Children.Add(badge);
+        header.Children.Add(texts);
+        return header;
+    }
+
     private UIElement BuildLeftPanel()
     {
         var left = new Grid();
-        left.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         left.RowDefinitions.Add(new RowDefinition { Height = new GridLength(3, GridUnitType.Star) });
-        left.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         left.RowDefinitions.Add(new RowDefinition { Height = new GridLength(2, GridUnitType.Star) });
 
-        // Barre de recherche
-        var searchButton = ActionButton("Rechercher", "#0864D9", "White");
+        // ----- Carte 1 : recherche + liste des clients -----
+        var searchButton = ActionButton("Rechercher", "BtnPrimary");
+        searchButton.Margin = new Thickness(12, 0, 0, 0);
         searchButton.Click += async (_, _) => await RunAsync(() => LoadListAsync(_current?.Id));
+
+        var searchIcon = new Shapes.Path
+        {
+            Data = (Geometry)Application.Current.FindResource("IconSearch"),
+            Stroke = Solid("#94A3B8"),
+            StrokeThickness = 2,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            Stretch = Stretch.Uniform,
+            Width = 16,
+            Height = 16,
+            Margin = new Thickness(13, 0, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false
+        };
+
+        _search.Padding = new Thickness(38, 7, 10, 7);
+        _search.ToolTip = "Nom, téléphone ou numéro client (Entrée pour rechercher)";
+
+        var searchBox = new Grid();
+        searchBox.Children.Add(_search);
+        searchBox.Children.Add(searchIcon);
 
         var searchBar = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
         DockPanel.SetDock(searchButton, Dock.Right);
         DockPanel.SetDock(_showInactive, Dock.Right);
         searchBar.Children.Add(searchButton);
         searchBar.Children.Add(_showInactive);
-        _search.ToolTip = "Nom, téléphone ou numéro client (Entrée pour rechercher)";
-        searchBar.Children.Add(_search);
-        Grid.SetRow(searchBar, 0);
-        left.Children.Add(searchBar);
+        searchBar.Children.Add(searchBox);
 
-        // Liste des clients
         _customersGrid.Columns.Add(Column("Numéro", "CustomerNumber", 110));
         _customersGrid.Columns.Add(Column("Nom", "FullName", 0));
         _customersGrid.Columns.Add(Column("Téléphone", "Phone", 150));
-        Grid.SetRow(_customersGrid, 1);
-        left.Children.Add(_customersGrid);
 
-        // Historique des commandes du client sélectionné
+        var listBody = new Grid();
+        listBody.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        listBody.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        Grid.SetRow(searchBar, 0);
+        Grid.SetRow(_customersGrid, 1);
+        listBody.Children.Add(searchBar);
+        listBody.Children.Add(_customersGrid);
+
+        var listCard = Card(listBody);
+        Grid.SetRow(listCard, 0);
+        left.Children.Add(listCard);
+
+        // ----- Carte 2 : commandes du client sélectionné -----
         var historyTitle = new TextBlock
         {
             Text = "Commandes du client sélectionné",
-            FontSize = 15,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = Solid("#12365D"),
-            Margin = new Thickness(0, 16, 0, 8)
+            Margin = new Thickness(0, 0, 0, 10)
         };
-        Grid.SetRow(historyTitle, 2);
-        left.Children.Add(historyTitle);
+        historyTitle.SetResourceReference(FrameworkElement.StyleProperty, "SectionTitle");
 
         _ordersGrid.Columns.Add(Column("N° commande", "Number", 170));
         _ordersGrid.Columns.Add(Column("Date", "Date", 140));
         _ordersGrid.Columns.Add(Column("Statut", "Status", 0));
         _ordersGrid.Columns.Add(Column("Total", "Total", 110));
-        Grid.SetRow(_ordersGrid, 3);
-        left.Children.Add(_ordersGrid);
+
+        var historyBody = new Grid();
+        historyBody.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        historyBody.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        Grid.SetRow(historyTitle, 0);
+        Grid.SetRow(_ordersGrid, 1);
+        historyBody.Children.Add(historyTitle);
+        historyBody.Children.Add(_ordersGrid);
+
+        var historyCard = Card(historyBody);
+        historyCard.Margin = new Thickness(0, 16, 0, 0);
+        Grid.SetRow(historyCard, 1);
+        left.Children.Add(historyCard);
 
         return left;
     }
@@ -350,7 +424,7 @@ public sealed class CustomerManagementView : UserControl
         form.Children.Add(Caption("Notes"));
         form.Children.Add(_notes);
 
-        var buttons = new WrapPanel { Margin = new Thickness(0, 18, 0, 0) };
+        var buttons = new WrapPanel { Margin = new Thickness(0, 20, 0, 0) };
         buttons.Children.Add(_saveButton);
         buttons.Children.Add(_newButton);
         buttons.Children.Add(_toggleButton);
@@ -358,14 +432,9 @@ public sealed class CustomerManagementView : UserControl
 
         form.Children.Add(_message);
 
-        return new Border
-        {
-            Background = Brushes.White,
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(20),
-            VerticalAlignment = VerticalAlignment.Top,
-            Child = form
-        };
+        var card = Card(form);
+        card.VerticalAlignment = VerticalAlignment.Top;
+        return card;
     }
 
     // ---------- Petits utilitaires d'affichage ----------
@@ -373,22 +442,25 @@ public sealed class CustomerManagementView : UserControl
     private static SolidColorBrush Solid(string hex) =>
         (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!;
 
-    private static TextBlock Caption(string text) => new()
+    /// <summary>Carte blanche arrondie (style « CardPanel » du thème commun).</summary>
+    private static Border Card(UIElement child)
     {
-        Text = text,
-        Foreground = Solid("#718096"),
-        FontSize = 12,
-        Margin = new Thickness(0, 14, 0, 4)
-    };
+        var card = new Border { Child = child };
+        card.SetResourceReference(FrameworkElement.StyleProperty, "CardPanel");
+        return card;
+    }
 
+    private static TextBlock Caption(string text)
+    {
+        var caption = new TextBlock { Text = text };
+        caption.SetResourceReference(FrameworkElement.StyleProperty, "FieldLabel");
+        return caption;
+    }
+
+    // L'aspect des champs, boutons et tableaux vient du thème (Resources/Theme.xaml).
     private static TextBox Input(int maxLength = 0, bool multiline = false)
     {
-        var box = new TextBox
-        {
-            Padding = new Thickness(8, 6, 8, 6),
-            FontSize = 14,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
+        var box = new TextBox();
 
         if (maxLength > 0)
         {
@@ -399,7 +471,7 @@ public sealed class CustomerManagementView : UserControl
         {
             box.AcceptsReturn = true;
             box.TextWrapping = TextWrapping.Wrap;
-            box.Height = 80;
+            box.Height = 90;
             box.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
             box.VerticalContentAlignment = VerticalAlignment.Top;
         }
@@ -407,17 +479,16 @@ public sealed class CustomerManagementView : UserControl
         return box;
     }
 
-    private static Button ActionButton(string text, string background, string foreground) => new()
+    private static Button ActionButton(string text, string styleKey)
     {
-        Content = text,
-        Padding = new Thickness(16, 9, 16, 9),
-        Margin = new Thickness(0, 0, 8, 8),
-        Background = Solid(background),
-        Foreground = Solid(foreground),
-        BorderThickness = new Thickness(0),
-        FontWeight = FontWeights.SemiBold,
-        Cursor = Cursors.Hand
-    };
+        var button = new Button
+        {
+            Content = text,
+            Margin = new Thickness(0, 0, 8, 8)
+        };
+        button.SetResourceReference(FrameworkElement.StyleProperty, styleKey);
+        return button;
+    }
 
     private static DataGrid CreateGrid() => new()
     {
@@ -425,14 +496,7 @@ public sealed class CustomerManagementView : UserControl
         IsReadOnly = true,
         CanUserAddRows = false,
         CanUserDeleteRows = false,
-        SelectionMode = DataGridSelectionMode.Single,
-        HeadersVisibility = DataGridHeadersVisibility.Column,
-        GridLinesVisibility = DataGridGridLinesVisibility.Horizontal,
-        HorizontalGridLinesBrush = Solid("#E2E8F0"),
-        Background = Brushes.White,
-        RowBackground = Brushes.White,
-        BorderThickness = new Thickness(0),
-        FontSize = 13
+        SelectionMode = DataGridSelectionMode.Single
     };
 
     private static DataGridTextColumn Column(string header, string path, double width) => new()

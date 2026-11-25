@@ -1,344 +1,353 @@
-
 <Window x:Class="PressingManager.App.Views.DashboardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:PressingManager.App.Localization"
         Title="{loc:T Dashboard_Title}"
-        Height="720"
-        Width="1200"
-        MinHeight="650"
-        MinWidth="1000"
+        Height="760"
+        Width="1280"
+        MinHeight="680"
+        MinWidth="1100"
         WindowStartupLocation="CenterScreen"
         Background="#F3F6FB">
 
     <Window.Resources>
 
-        <!-- STYLE DES BOUTONS DU MENU LATERAL -->
-        <Style x:Key="SidebarButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#D6E1EF"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Normal"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Padding" Value="20,14"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Margin" Value="10,0,10,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-
+        <!-- ELEMENT DU MENU LATERAL : pastille + pictogramme (meme modele que l'en-tete de Statistiques) -->
+        <Style x:Key="NavItem" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#B9C8DB" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Margin" Value="12,0,12,4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="8">
-
-                            <ContentPresenter
-                                Margin="{TemplateBinding Padding}"
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                RecognizesAccessKey="True"/>
-                        </Border>
-
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Background="Transparent" SnapsToDevicePixels="True">
+                            <Border x:Name="Bg" CornerRadius="10" Background="Transparent" />
+                            <Border x:Name="Accent" Width="4" Height="22" CornerRadius="2"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Background="#08A6B5" Visibility="Collapsed" />
+                            <StackPanel Orientation="Horizontal" Margin="14,8,10,8">
+                                <Border x:Name="Badge" Width="34" Height="34" CornerRadius="9" Background="#17385E">
+                                    <Viewbox Width="18" Height="18">
+                                        <Canvas Width="24" Height="24">
+                                            <Path x:Name="Ico"
+                                                  Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  Stroke="#14B8A6" StrokeThickness="2"
+                                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+                                <ContentPresenter Margin="12,0,0,0" VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True" />
+                            </StackPanel>
+                        </Grid>
                         <ControlTemplate.Triggers>
-
-                            <!-- SURVOL -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder"
-                                        Property="Background"
-                                        Value="#174A75"/>
-                                <Setter Property="Foreground"
-                                        Value="White"/>
+                                <Setter TargetName="Bg" Property="Background" Value="#15355A" />
+                                <Setter Property="Foreground" Value="White" />
                             </Trigger>
-
-                            <!-- CLIC -->
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder"
-                                        Property="Background"
-                                        Value="#0864D9"/>
-                                <Setter Property="Foreground"
-                                        Value="White"/>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#1A4474" />
+                                <Setter TargetName="Accent" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Badge" Property="Background" Value="#08A6B5" />
+                                <Setter TargetName="Ico" Property="Stroke" Value="White" />
+                                <Setter Property="Foreground" Value="White" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
                             </Trigger>
-
-                            <!-- BOUTON DESACTIVE -->
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- STYLE DU BOUTON ACTIF -->
-        <Style x:Key="ActiveSidebarButton"
-               TargetType="Button"
-               BasedOn="{StaticResource SidebarButton}">
+        <!-- CARTE D'INDICATEUR (meme modele que les cartes de Statistiques) -->
+        <Style x:Key="KpiCard" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="20,18" />
+            <Setter Property="Margin" Value="0,0,14,0" />
+        </Style>
 
-            <Setter Property="Background" Value="#0864D9"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#064DA8"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
+        <Style x:Key="KpiIconBadge" TargetType="Border">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Background" Value="#80FFFFFF" />
+            <Setter Property="Margin" Value="0,0,14,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
     </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="256" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- MENU LATERAL -->
-        <Border Grid.Column="0" Background="#0F2A47">
+        <!-- ===================== MENU LATERAL ===================== -->
+        <Border Grid.Column="0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#0F2A4A" Offset="0" />
+                    <GradientStop Color="#0B2038" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <!-- IMPORTANT : les elements ancres en bas sont declares AVANT le contenu central.
+                 (Avant, le pied de page etait declare en dernier : il remplissait tout l'espace
+                 et se retrouvait coupe en haut, a cote de MENU PRINCIPAL.) -->
             <DockPanel LastChildFill="True">
 
-                <StackPanel DockPanel.Dock="Top" Margin="22,30,22,35">
-                    <TextBlock Text="PRESSING"
-                               Foreground="White"
-                               FontSize="23"
-                               FontWeight="Bold"/>
-
-                    <TextBlock Text="MANAGER"
-                               Foreground="#08A6B5"
-                               FontSize="17"
-                               FontWeight="SemiBold"
-                               Margin="0,2,0,0"/>
+                <!-- Logo -->
+                <StackPanel DockPanel.Dock="Top" Margin="24,28,24,26">
+                    <TextBlock Text="PRESSING" Foreground="White" FontSize="23" FontWeight="Bold" />
+                    <TextBlock Text="MANAGER" Foreground="#08A6B5" FontSize="17" FontWeight="SemiBold" Margin="0,2,0,0" />
                 </StackPanel>
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <TextBlock Text="{loc:T Nav_MainMenu}"
-                               Foreground="#91A8C2"
-                               FontSize="11"
-                               FontWeight="SemiBold"
-                               Margin="22,0,0,15"/>
+                <!-- Pied de page -->
+                <TextBlock DockPanel.Dock="Bottom" Text="Pressing Manager © 2026" Foreground="#7F96B2"
+                           FontSize="11" HorizontalAlignment="Center" Margin="0,6,0,16" />
 
-                    <Button x:Name="BtnDashboard"
-                            Content="{loc:T Nav_Dashboard}"
-                            Style="{StaticResource ActiveSidebarButton}"
-                            Click="BtnDashboard_Click"/>
+                <!-- Carte utilisateur -->
+                <Border DockPanel.Dock="Bottom" Background="#14355A" CornerRadius="12" Margin="14,8,14,0" Padding="12,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="36" Height="36" Margin="0,0,10,0">
+                            <Ellipse Fill="#08A6B5" />
+                            <TextBlock x:Name="TxtUserInitial" Text="?" Foreground="White" FontWeight="Bold" FontSize="15"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtUserName" Text="—" Foreground="White" FontWeight="SemiBold" FontSize="13"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="TxtUserRole" Text="—" Foreground="#9FB4CE" FontSize="11"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-                    <Button x:Name="BtnCustomers" Click="BtnCustomers_Click" Content="{loc:T Nav_Clients}"
-                            Style="{StaticResource SidebarButton}"/>
+                <!-- Parametres : toujours visible, en bas du menu -->
+                <RadioButton DockPanel.Dock="Bottom" x:Name="NavSettings" GroupName="MainNav"
+                             Content="{loc:T Nav_Settings}" Tag="{StaticResource IconSettings}"
+                             Style="{StaticResource NavItem}" Click="NavSettings_Click" />
 
-                    <Button Content="{loc:T Nav_Orders}"
-                            Style="{StaticResource SidebarButton}"/>
+                <!-- Navigation principale (defile avec une barre fine si la fenetre est petite) -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock Text="{loc:T Nav_MainMenu}" Foreground="#7F96B2" FontSize="11" FontWeight="SemiBold"
+                                   Margin="26,0,0,12" />
 
-                    <Button Content="{loc:T Nav_Garments}"
-                            Style="{StaticResource SidebarButton}"/>
+                        <RadioButton x:Name="NavDashboard" GroupName="MainNav" IsChecked="True"
+                                     Content="{loc:T Nav_Dashboard}" Tag="{StaticResource IconDashboard}"
+                                     Style="{StaticResource NavItem}" Click="NavDashboard_Click" />
 
-                    <Button x:Name="BtnPayments"
-                            Content="{loc:T Nav_Payments}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnPayments_Click"/>
+                        <RadioButton x:Name="NavCustomers" GroupName="MainNav"
+                                     Content="{loc:T Nav_Clients}" Tag="{StaticResource IconClients}"
+                                     Style="{StaticResource NavItem}" Click="NavCustomers_Click" />
 
-                    <Button x:Name="BtnStatistics"
-                            Content="{loc:T Nav_Statistics}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnStatistics_Click"/>
+                        <RadioButton x:Name="NavOrders" GroupName="MainNav"
+                                     Content="{loc:T Nav_Orders}" Tag="{StaticResource IconOrders}"
+                                     Style="{StaticResource NavItem}" Click="NavOrders_Click" />
 
-                    <Button x:Name="BtnUsers"
-                            Content="{loc:T Nav_Users}"
-                            Style="{StaticResource SidebarButton}"
-                            Click="BtnUsers_Click"/>
-                </StackPanel>
+                        <RadioButton x:Name="NavServices" GroupName="MainNav"
+                                     Content="{loc:T Nav_Services}" Tag="{StaticResource IconServices}"
+                                     Style="{StaticResource NavItem}" Click="NavServices_Click" />
+
+                        <RadioButton x:Name="NavStock" GroupName="MainNav"
+                                     Content="{loc:T Nav_Stock}" Tag="{StaticResource IconStock}"
+                                     Style="{StaticResource NavItem}" Click="NavStock_Click" />
+
+                        <RadioButton x:Name="NavPayments" GroupName="MainNav"
+                                     Content="{loc:T Nav_Payments}" Tag="{StaticResource IconPayments}"
+                                     Style="{StaticResource NavItem}" Click="NavPayments_Click" />
+
+                        <RadioButton x:Name="NavStatistics" GroupName="MainNav"
+                                     Content="{loc:T Nav_Statistics}" Tag="{StaticResource IconStats}"
+                                     Style="{StaticResource NavItem}" Click="NavStatistics_Click" />
+
+                        <RadioButton x:Name="NavUsers" GroupName="MainNav"
+                                     Content="{loc:T Nav_Users}" Tag="{StaticResource IconUsers}"
+                                     Style="{StaticResource NavItem}" Click="NavUsers_Click" />
+                    </StackPanel>
                 </ScrollViewer>
-
-                <TextBlock DockPanel.Dock="Bottom"
-                           Text="Pressing Manager © 2026"
-                           Foreground="#91A8C2"
-                           FontSize="11"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,20"/>
             </DockPanel>
         </Border>
 
-        <!-- CONTENU PRINCIPAL -->
-        <ScrollViewer x:Name="DashboardHomeContent"
-                      Grid.Column="1"
-                      VerticalScrollBarVisibility="Auto"
+        <!-- ===================== ACCUEIL (TABLEAU DE BORD) ===================== -->
+        <ScrollViewer x:Name="HomeHost" Grid.Column="1" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Margin="32">
-        <Grid x:Name="DashboardHomeLayout">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+            <StackPanel Margin="32">
 
-            <StackPanel Grid.Row="0">
-                <TextBlock Text="{loc:T Dashboard_Welcome}"
-                           FontSize="28"
-                           FontWeight="Bold"
-                           Foreground="#12365D"/>
+                <!-- En-tete : meme modele que Statistiques -->
+                <Grid Margin="0,0,0,22">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Text="{loc:T Dashboard_Subtitle}"
-                           FontSize="14"
-                           Foreground="#718096"
-                           Margin="0,8,0,25"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" Background="#0F2A4A" Margin="0,0,12,0">
+                            <Viewbox Width="22" Height="22">
+                                <Canvas Width="24" Height="24">
+                                    <Path Stroke="#14B8A6" StrokeThickness="2" StrokeLineJoin="Round"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Data="{StaticResource IconDashboard}" />
+                                </Canvas>
+                            </Viewbox>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtWelcome" Text="{loc:T Dashboard_Welcome}" FontSize="22"
+                                       FontWeight="Bold" Foreground="#0F2A4A" />
+                            <TextBlock Text="{loc:T Dashboard_Subtitle}" FontSize="12" Foreground="#64748B" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Button Grid.Column="1" Content="{loc:T Common_Refresh}" Style="{StaticResource BtnLight}"
+                            VerticalAlignment="Center" Click="BtnRefreshHome_Click" />
+                </Grid>
+
+                <!-- Cartes d'indicateurs -->
+                <UniformGrid Columns="4" Margin="0,0,-14,22">
+
+                    <Border Style="{StaticResource KpiCard}" Background="#E3EEFF">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource KpiIconBadge}">
+                                <Viewbox Width="22" Height="22">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#0864D9" StrokeThickness="2.2" StrokeLineJoin="Round"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="{StaticResource IconOrders}" />
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:T Dash_OrdersToday}" FontSize="13" FontWeight="SemiBold" Foreground="#0864D9" />
+                                <TextBlock x:Name="TxtOrdersToday" Text="—" FontSize="22" FontWeight="Bold" Foreground="#0B3A75" />
+                                <TextBlock Text=" " FontSize="12" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiCard}" Background="#DDF3F5">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource KpiIconBadge}">
+                                <Viewbox Width="22" Height="22">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#08A6B5" StrokeThickness="2.2" StrokeLineJoin="Round"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="M12,3 C7,3 3,7 3,12 C3,17 7,21 12,21 C17,21 21,17 21,12 C21,7 17,3 12,3 Z M12,7 L12,12 L15.5,14" />
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:T Dash_InProgress}" FontSize="13" FontWeight="SemiBold" Foreground="#08808C" />
+                                <TextBlock x:Name="TxtInProgress" Text="—" FontSize="22" FontWeight="Bold" Foreground="#065E68" />
+                                <TextBlock x:Name="TxtReadySub" Text=" " FontSize="12" FontWeight="SemiBold" Foreground="#08808C" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiCard}" Background="#DDF5EC">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource KpiIconBadge}">
+                                <Viewbox Width="22" Height="22">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#16845B" StrokeThickness="2.2" StrokeLineJoin="Round"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="M3,17 L9,11 L13,15 L21,7 M15,7 L21,7 L21,13" />
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:T Dash_RevenueToday}" FontSize="13" FontWeight="SemiBold" Foreground="#16845B" />
+                                <TextBlock x:Name="TxtRevenueToday" Text="—" FontSize="22" FontWeight="Bold"
+                                           TextTrimming="CharacterEllipsis" Foreground="#0B5E40" />
+                                <TextBlock Text=" " FontSize="12" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiCard}" Background="#FDE6E0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource KpiIconBadge}">
+                                <Viewbox Width="22" Height="22">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="#D9534F" StrokeThickness="2.2" StrokeLineJoin="Round"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="{StaticResource IconPayments}" />
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:T Dash_Outstanding}" FontSize="13" FontWeight="SemiBold" Foreground="#D9534F" />
+                                <TextBlock x:Name="TxtOutstanding" Text="—" FontSize="22" FontWeight="Bold"
+                                           TextTrimming="CharacterEllipsis" Foreground="#A8322F" />
+                                <TextBlock x:Name="TxtUnpaidSub" Text=" " FontSize="12" FontWeight="SemiBold" Foreground="#D9534F" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <!-- Alertes de stock + acces rapide -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Background="White" CornerRadius="10" Padding="22" Margin="0,0,16,0">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T Dash_StockAlerts}" Style="{StaticResource SectionTitle}" Margin="0,0,0,14" />
+                            <ItemsControl x:Name="StockAlertsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#FFF4F2" CornerRadius="8" Padding="14,10" Margin="0,0,0,8">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" FontWeight="SemiBold"
+                                                           Foreground="#C0392B" Margin="12,0,0,0" />
+                                                <TextBlock Text="{Binding Name}" Foreground="#12365D" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="TxtNoAlert" Text="{loc:T Dash_NoAlert}" Foreground="#718096" FontSize="13"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="22">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T Dash_QuickAccess}" Style="{StaticResource SectionTitle}" Margin="0,0,0,14" />
+                            <Button x:Name="QuickCustomers" Content="{loc:T Nav_Clients}" Style="{StaticResource BtnLight}"
+                                    Margin="0,0,0,8" Click="NavCustomers_Click" />
+                            <Button x:Name="QuickOrders" Content="{loc:T Nav_Orders}" Style="{StaticResource BtnLight}"
+                                    Margin="0,0,0,8" Click="NavOrders_Click" />
+                            <Button x:Name="QuickPayments" Content="{loc:T Nav_Payments}" Style="{StaticResource BtnLight}"
+                                    Click="NavPayments_Click" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <TextBlock x:Name="TxtHomeMessage" Margin="0,14,0,0" Foreground="#C0392B" TextWrapping="Wrap" />
             </StackPanel>
-
-            <TextBlock Grid.Row="1"
-                       Text="{loc:T Dashboard_Overview}"
-                       FontSize="19"
-                       FontWeight="SemiBold"
-                       Foreground="#12365D"
-                       Margin="0,0,0,16"/>
-
-            <!-- CARTES STATISTIQUES -->
-            <UniformGrid Grid.Row="2" Columns="4" Margin="0,0,0,25">
-
-                <Border Background="White"
-                        CornerRadius="10"
-                        Padding="18"
-                        Margin="0,0,12,0">
-                    <StackPanel>
-                        <TextBlock Text="CLIENTS"
-                                   Foreground="#718096"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
-                                   Foreground="#12365D"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Margin="0,10,0,0"/>
-                        <TextBlock Text="Total des clients"
-                                   Foreground="#718096"
-                                   FontSize="11"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="White"
-                        CornerRadius="10"
-                        Padding="18"
-                        Margin="0,0,12,0">
-                    <StackPanel>
-                        <TextBlock Text="COMMANDES"
-                                   Foreground="#718096"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
-                                   Foreground="#0864D9"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Margin="0,10,0,0"/>
-                        <TextBlock Text="Total des commandes"
-                                   Foreground="#718096"
-                                   FontSize="11"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="White"
-                        CornerRadius="10"
-                        Padding="18"
-                        Margin="0,0,12,0">
-                    <StackPanel>
-                        <TextBlock Text="EN COURS"
-                                   Foreground="#718096"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
-                                   Foreground="#08A6B5"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Margin="0,10,0,0"/>
-                        <TextBlock Text="Commandes en cours"
-                                   Foreground="#718096"
-                                   FontSize="11"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Background="White"
-                        CornerRadius="10"
-                        Padding="18">
-                    <StackPanel>
-                        <TextBlock Text="REVENUS"
-                                   Foreground="#718096"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Text="—"
-                                   Foreground="#16845B"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Margin="0,10,0,0"/>
-                        <TextBlock Text="Revenus enregistrés"
-                                   Foreground="#718096"
-                                   FontSize="11"/>
-                    </StackPanel>
-                </Border>
-
-            </UniformGrid>
-
-            <!-- ACTIVITES RECENTES -->
-            <Border Grid.Row="3"
-                    Background="White"
-                    CornerRadius="10"
-                    Padding="22">
-                <StackPanel>
-                    <TextBlock Text="Activités récentes"
-                               FontSize="19"
-                               FontWeight="SemiBold"
-                               Foreground="#12365D"/>
-
-                    <TextBlock Text="Les dernières opérations apparaîtront ici."
-                               Foreground="#718096"
-                               FontSize="13"
-                               Margin="0,15,0,0"/>
-                </StackPanel>
-            </Border>
-
-        </Grid>
-
-        <!-- MODULES DE LA PERSONNE 3 : regroupes dans le tableau de bord -->
-        <StackPanel x:Name="ProcessingDashboardSection" Margin="0,28,0,0">
-            <TextBlock Text="TRAITEMENT DES COMMANDES"
-                       FontSize="18" FontWeight="Bold" Foreground="#12365D"
-                       Margin="0,0,0,12"/>
-            <Border Background="White" CornerRadius="12" Padding="8">
-                <ContentControl x:Name="ProcessingDashboardHost" Height="650"/>
-            </Border>
-        </StackPanel>
-
-        <StackPanel x:Name="ServicesDashboardSection" Margin="0,28,0,0">
-            <TextBlock Text="SERVICES ET TARIFS"
-                       FontSize="18" FontWeight="Bold" Foreground="#12365D"
-                       Margin="0,0,0,12"/>
-            <Border Background="White" CornerRadius="12" Padding="8">
-                <ContentControl x:Name="ServicesDashboardHost" Height="650"/>
-            </Border>
-        </StackPanel>
-
-        <StackPanel x:Name="StockDashboardSection" Margin="0,28,0,32">
-            <TextBlock Text="GESTION DES STOCKS"
-                       FontSize="18" FontWeight="Bold" Foreground="#12365D"
-                       Margin="0,0,0,12"/>
-            <Border Background="White" CornerRadius="12" Padding="8">
-                <ContentControl x:Name="StockDashboardHost" Height="650"/>
-            </Border>
-        </StackPanel>
-          </StackPanel>
         </ScrollViewer>
 
-        <!-- MODULE PAIEMENTS, CAISSE ET DEPENSES (Personne 4) -->
-        <ContentControl x:Name="PaymentsContentHost" Grid.Column="1" Visibility="Collapsed"/>
-
-        <!-- MODULE RAPPORTS ET STATISTIQUES (Personne 5) : meme zone blanche, le menu reste visible -->
-        <ContentControl x:Name="StatisticsContentHost" Grid.Column="1" Visibility="Collapsed"/>
-
-               <!-- MODULE UTILISATEURS (Personne 5) : meme zone blanche -->
-        <ContentControl x:Name="UsersContentHost" Grid.Column="1" Visibility="Collapsed"/>
-
-        <!-- MODULE CLIENTS (Personne 2) -->
-        <ContentControl x:Name="CustomersContentHost" Grid.Column="1" Visibility="Collapsed"/>
+        <!-- ===================== MODULES (une zone pleine page par onglet : plus de defilement imbrique) ===================== -->
+        <ContentControl x:Name="CustomersHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="OrdersHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="ServicesHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="StockHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="PaymentsHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="StatisticsHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="UsersHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="SettingsHost" Grid.Column="1" Visibility="Collapsed" />
 
     </Grid>
 </Window>

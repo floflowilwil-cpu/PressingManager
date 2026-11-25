@@ -7,25 +7,20 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="Margin" Value="0,10,0,4" />
-            <Setter Property="Foreground" Value="#12365D" />
+            <Setter Property="Margin" Value="0,12,0,5" />
+            <Setter Property="Foreground" Value="#718096" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Padding" Value="12,8" />
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
             <Setter Property="Margin" Value="0,12,0,0" />
-            <Setter Property="Background" Value="#0864D9" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
         </Style>
 
-        <Style x:Key="LightButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="Background" Value="White" />
-            <Setter Property="Foreground" Value="#12365D" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#CBD5E0" />
+        <Style x:Key="LightButton" TargetType="Button" BasedOn="{StaticResource BtnLight}">
+            <Setter Property="Margin" Value="0,12,0,0" />
         </Style>
+
     </UserControl.Resources>
 
     <Grid Margin="32">
@@ -85,17 +80,17 @@
                         <TextBlock Text="{loc:T Users_NewAccount}" FontWeight="Bold" Foreground="#08A6B5" />
 
                         <TextBlock Text="{loc:T Users_FullName}" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding NewFullName, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                        <TextBox Text="{Binding NewFullName, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock Text="{loc:T Users_Username}" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                        <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock Text="{loc:T Users_Password}" Style="{StaticResource FieldLabel}" />
-                        <PasswordBox x:Name="NewPasswordBox" Padding="6" PasswordChanged="NewPasswordBox_PasswordChanged" />
+                        <PasswordBox x:Name="NewPasswordBox" PasswordChanged="NewPasswordBox_PasswordChanged" />
 
                         <TextBlock Text="{loc:T Users_Role}" Style="{StaticResource FieldLabel}" />
                         <ComboBox ItemsSource="{Binding Roles}" DisplayMemberPath="Label" SelectedValuePath="Value"
-                                  SelectedValue="{Binding NewRole}" Padding="6" />
+                                  SelectedValue="{Binding NewRole}" />
 
                         <Button Content="{loc:T Users_Create}" Command="{Binding CreateCommand}"
                                 Style="{StaticResource PrimaryButton}" />
@@ -108,7 +103,7 @@
                                 Style="{StaticResource PrimaryButton}" />
 
                         <TextBlock Text="{loc:T Users_NewPassword}" Style="{StaticResource FieldLabel}" />
-                        <PasswordBox x:Name="ResetPasswordBox" Padding="6" PasswordChanged="ResetPasswordBox_PasswordChanged" />
+                        <PasswordBox x:Name="ResetPasswordBox" PasswordChanged="ResetPasswordBox_PasswordChanged" />
                         <Button Content="{loc:T Users_Reset}" Command="{Binding ResetPasswordCommand}"
                                 Style="{StaticResource PrimaryButton}" />
 
