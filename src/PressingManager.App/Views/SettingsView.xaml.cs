@@ -19,16 +19,26 @@ public partial class SettingsView : UserControl
     private readonly ICurrentUserContext _session;
     private readonly IUserService _users;
     private readonly IAuthService _auth;
+    private readonly IIntegrationSettingsStore _settingsStore;
+    private readonly IEmailNotificationService _emailService;
 
-    public SettingsView(ICurrentUserContext session, IUserService users, IAuthService auth)
+    public SettingsView(
+        ICurrentUserContext session,
+        IUserService users,
+        IAuthService auth,
+        IIntegrationSettingsStore settingsStore,
+        IEmailNotificationService emailService)
     {
         InitializeComponent();
 
         _session = session;
         _users = users;
         _auth = auth;
+        _settingsStore = settingsStore;
+        _emailService = emailService;
 
         Loc.Instance.LanguageChanged += (_, _) => Refresh();
+        LoadIntegrationSettings();
         Refresh();
     }
 
@@ -98,6 +108,108 @@ public partial class SettingsView : UserControl
     {
         TxtPasswordMessage.Text = text;
         TxtPasswordMessage.Foreground = new SolidColorBrush(isError ? Color.FromRgb(192, 57, 43) : Color.FromRgb(30, 132, 73));
+    }
+
+    private void LoadIntegrationSettings()
+    {
+        var settings = _settingsStore.Load();
+
+        ChkSmtpEnabled.IsChecked = settings.Email.Enabled;
+        TxtSmtpHost.Text = settings.Email.SmtpHost;
+        TxtSmtpPort.Text = settings.Email.SmtpPort.ToString();
+        ChkSmtpSsl.IsChecked = settings.Email.UseSsl;
+        TxtSmtpUsername.Text = settings.Email.Username;
+        TxtSmtpPassword.Password = settings.Email.Password;
+        TxtSmtpFromAddress.Text = settings.Email.FromAddress;
+        TxtSmtpFromName.Text = settings.Email.FromName;
+
+        var isCampay = string.Equals(settings.MobileMoney.Provider, "Campay", StringComparison.OrdinalIgnoreCase);
+        ChipMomoCampay.IsChecked = isCampay;
+        ChipMomoSimulation.IsChecked = !isCampay;
+        TxtMomoBaseUrl.Text = settings.MobileMoney.BaseUrl;
+        TxtMomoApiToken.Text = settings.MobileMoney.ApiToken;
+        TxtMomoUsername.Text = settings.MobileMoney.Username;
+        TxtMomoPassword.Password = settings.MobileMoney.Password;
+    }
+
+    private bool TrySaveSmtpSettings()
+    {
+        if (!int.TryParse(TxtSmtpPort.Text.Trim(), out var port) || port < 1 || port > 65535)
+        {
+            ShowStatusText(TxtSmtpMessage, Loc.Instance["Settings_Smtp_InvalidPort"], isError: true);
+            return false;
+        }
+
+        var current = _settingsStore.Load();
+        current.Email.Enabled = ChkSmtpEnabled.IsChecked == true;
+        current.Email.SmtpHost = TxtSmtpHost.Text.Trim();
+        current.Email.SmtpPort = port;
+        current.Email.UseSsl = ChkSmtpSsl.IsChecked == true;
+        current.Email.Username = TxtSmtpUsername.Text.Trim();
+        current.Email.Password = TxtSmtpPassword.Password;
+        current.Email.FromAddress = TxtSmtpFromAddress.Text.Trim();
+        current.Email.FromName = TxtSmtpFromName.Text.Trim();
+
+        _settingsStore.Save(current);
+        return true;
+    }
+
+    private void BtnSaveSmtp_Click(object sender, RoutedEventArgs e)
+    {
+        if (TrySaveSmtpSettings())
+        {
+            ShowStatusText(TxtSmtpMessage, Loc.Instance["Settings_Smtp_Saved"], isError: false);
+        }
+    }
+
+    private async void BtnTestSmtp_Click(object sender, RoutedEventArgs e)
+    {
+        if (!TrySaveSmtpSettings())
+        {
+            return;
+        }
+
+        var recipient = TxtSmtpTestEmail.Text.Trim();
+        if (recipient.Length == 0)
+        {
+            ShowStatusText(TxtSmtpMessage, Loc.Instance["Settings_Smtp_TestRequired"], isError: true);
+            return;
+        }
+
+        var result = await _emailService.SendTestEmailAsync(recipient, Loc.Instance.IsEnglish);
+        if (result.SentViaSmtp)
+        {
+            ShowStatusText(TxtSmtpMessage, Loc.Instance["Settings_Smtp_TestSent"], isError: false);
+        }
+        else if (result.SavedLocally && result.LocalFilePath is not null)
+        {
+            ShowStatusText(TxtSmtpMessage, Loc.Instance.Format("Settings_Smtp_TestSaved", result.LocalFilePath), isError: false);
+        }
+        else
+        {
+            ShowStatusText(TxtSmtpMessage, result.ErrorMessage ?? "Erreur SMTP", isError: true);
+        }
+    }
+
+    private void BtnSaveMomo_Click(object sender, RoutedEventArgs e)
+    {
+        var current = _settingsStore.Load();
+        current.MobileMoney.Provider = ChipMomoCampay.IsChecked == true ? "Campay" : "Simulation";
+        current.MobileMoney.BaseUrl = string.IsNullOrWhiteSpace(TxtMomoBaseUrl.Text)
+            ? "https://demo.campay.net/api"
+            : TxtMomoBaseUrl.Text.Trim();
+        current.MobileMoney.ApiToken = TxtMomoApiToken.Text.Trim();
+        current.MobileMoney.Username = TxtMomoUsername.Text.Trim();
+        current.MobileMoney.Password = TxtMomoPassword.Password;
+
+        _settingsStore.Save(current);
+        ShowStatusText(TxtMomoMessage, Loc.Instance["Settings_Momo_Saved"], isError: false);
+    }
+
+    private static void ShowStatusText(TextBlock target, string text, bool isError)
+    {
+        target.Text = text;
+        target.Foreground = new SolidColorBrush(isError ? Color.FromRgb(192, 57, 43) : Color.FromRgb(30, 132, 73));
     }
 
     /// <summary>Se déconnecte puis relance l'application sur l'écran de connexion.</summary>

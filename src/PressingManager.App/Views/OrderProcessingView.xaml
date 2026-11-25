@@ -121,7 +121,7 @@
                               BorderThickness="0" Background="White" RowHeight="42">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{loc:T Ord_ColId}" Binding="{Binding OrderIdText}" Width="58" />
-                            <DataGridTextColumn Header="{loc:T Proc_ColNumber}" Binding="{Binding OrderNumber}" Width="135" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColNumber}" Binding="{Binding OrderNumber}" Width="160" />
                             <DataGridTextColumn Header="{loc:T Proc_ColCustomer}" Binding="{Binding CustomerName}" Width="*" />
                             <DataGridTextColumn Header="{loc:T Ord_ColTotal}" Binding="{Binding TotalText}" Width="105" />
                             <DataGridTextColumn Header="{loc:T Proc_ColStatus}" Binding="{Binding StatusText}" Width="140" />
@@ -182,6 +182,59 @@
                                         Visibility="{Binding CanPayOrder, Converter={StaticResource BoolToVisibility}}" />
                             </StackPanel>
                         </Border>
+
+                        <!-- Barre visuelle de progression des statuts -->
+                        <StackPanel Margin="0,12,0,0"
+                                    Visibility="{Binding IsOrderSelected, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="{loc:T Ord_ProgressTitle}" FontSize="11" FontWeight="Bold"
+                                       Foreground="#64748B" Margin="0,0,0,6" />
+                            <ItemsControl ItemsSource="{Binding StatusSteps}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="12" BorderThickness="1" Padding="9,4" Margin="0,0,6,6">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#F8FAFC" />
+                                                    <Setter Property="BorderBrush" Value="#E2E8F0" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsReached}" Value="True">
+                                                            <Setter Property="Background" Value="#ECFDF5" />
+                                                            <Setter Property="BorderBrush" Value="#A7F3D0" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                            <Setter Property="Background" Value="#0F2A4A" />
+                                                            <Setter Property="BorderBrush" Value="#0F2A4A" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding Label}" FontSize="11">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#64748B" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsReached}" Value="True">
+                                                                <Setter Property="Foreground" Value="#065F46" />
+                                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                                <Setter Property="Foreground" Value="White" />
+                                                                <Setter Property="FontWeight" Value="Bold" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
 
                         <StackPanel IsEnabled="{Binding IsOrderSelected}"
                                     Visibility="{Binding CanChangeStatus, Converter={StaticResource BoolToVisibility}}">

@@ -9,7 +9,10 @@ using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.ViewModels;
 
-public sealed record MovementTypeOption(StockMovementType Value, string Label);
+public sealed record MovementTypeOption(StockMovementType Value, string Label)
+{
+    public override string ToString() => Label;
+}
 
 /// <summary>Une ligne du tableau des produits (stock deja calcule par le service a partir des mouvements).</summary>
 public sealed record ProductRow(ProductDto Source)

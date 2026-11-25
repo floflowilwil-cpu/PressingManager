@@ -189,6 +189,136 @@
                     </Border>
                 </StackPanel>
             </Grid>
+
+            <!-- PASSERELLES : E-MAIL SMTP & MOBILE MONEY -->
+            <Grid Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Notifications E-mail (SMTP) -->
+                <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="22" Margin="0,0,16,0">
+                    <StackPanel>
+                        <TextBlock Text="{loc:T Settings_Smtp_Title}" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="{loc:T Settings_Smtp_Subtitle}" Foreground="#718096" FontSize="12"
+                                   TextWrapping="Wrap" Margin="0,4,0,12" />
+
+                        <CheckBox x:Name="ChkSmtpEnabled" Content="{loc:T Settings_Smtp_Enabled}" Margin="0,0,0,8" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="120" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="{loc:T Settings_Smtp_Host}" Style="{StaticResource InfoLabel}" />
+                                <TextBox x:Name="TxtSmtpHost" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{loc:T Settings_Smtp_Port}" Style="{StaticResource InfoLabel}" />
+                                <TextBox x:Name="TxtSmtpPort" />
+                            </StackPanel>
+                        </Grid>
+
+                        <CheckBox x:Name="ChkSmtpSsl" Content="{loc:T Settings_Smtp_Ssl}" Margin="0,10,0,0" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="{loc:T Settings_Smtp_Username}" Style="{StaticResource InfoLabel}" />
+                                <TextBox x:Name="TxtSmtpUsername" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{loc:T Settings_Smtp_Password}" Style="{StaticResource InfoLabel}" />
+                                <PasswordBox x:Name="TxtSmtpPassword" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="{loc:T Settings_Smtp_FromAddress}" Style="{StaticResource InfoLabel}" />
+                                <TextBox x:Name="TxtSmtpFromAddress" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{loc:T Settings_Smtp_FromName}" Style="{StaticResource InfoLabel}" />
+                                <TextBox x:Name="TxtSmtpFromName" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Content="{loc:T Settings_Smtp_SaveBtn}" Style="{StaticResource BtnPrimary}"
+                                Margin="0,16,0,0" HorizontalAlignment="Left" Click="BtnSaveSmtp_Click" />
+
+                        <Separator Margin="0,16" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="{loc:T Settings_Smtp_TestEmail}" Style="{StaticResource InfoLabel}" Margin="0,0,0,3" />
+                                <TextBox x:Name="TxtSmtpTestEmail" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="{loc:T Settings_Smtp_TestBtn}" Style="{StaticResource BtnLight}"
+                                    VerticalAlignment="Bottom" Click="BtnTestSmtp_Click" />
+                        </Grid>
+
+                        <TextBlock x:Name="TxtSmtpMessage" Margin="0,10,0,0" TextWrapping="Wrap" FontSize="13" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Passerelle Mobile Money (MTN / Orange - Campay) -->
+                <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="22" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="{loc:T Settings_Momo_Title}" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="{loc:T Settings_Momo_Subtitle}" Foreground="#718096" FontSize="12"
+                                   TextWrapping="Wrap" Margin="0,4,0,12" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <RadioButton x:Name="ChipMomoSimulation" GroupName="MomoProvider"
+                                         Content="{loc:T Settings_Momo_ModeSim}"
+                                         Style="{StaticResource ChoiceChip}" />
+                            <RadioButton x:Name="ChipMomoCampay" GroupName="MomoProvider"
+                                         Content="{loc:T Settings_Momo_ModeCampay}"
+                                         Style="{StaticResource ChoiceChip}" />
+                        </StackPanel>
+
+                        <TextBlock Text="{loc:T Settings_Momo_BaseUrl}" Style="{StaticResource InfoLabel}" />
+                        <TextBox x:Name="TxtMomoBaseUrl" />
+
+                        <TextBlock Text="{loc:T Settings_Momo_ApiToken}" Style="{StaticResource InfoLabel}" />
+                        <TextBox x:Name="TxtMomoApiToken" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="{loc:T Settings_Momo_Username}" Style="{StaticResource InfoLabel}" />
+                                <TextBox x:Name="TxtMomoUsername" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{loc:T Settings_Momo_Password}" Style="{StaticResource InfoLabel}" />
+                                <PasswordBox x:Name="TxtMomoPassword" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Content="{loc:T Settings_Momo_SaveBtn}" Style="{StaticResource BtnPrimary}"
+                                Margin="0,16,0,0" HorizontalAlignment="Left" Click="BtnSaveMomo_Click" />
+
+                        <TextBlock x:Name="TxtMomoMessage" Margin="0,10,0,0" TextWrapping="Wrap" FontSize="13" />
+                    </StackPanel>
+                </Border>
+            </Grid>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

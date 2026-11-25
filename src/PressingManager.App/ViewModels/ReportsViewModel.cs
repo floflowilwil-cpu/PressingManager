@@ -28,7 +28,10 @@ public enum ReportPeriodKind
     Year
 }
 
-public sealed record StatusFilterOption(OrderStatus? Value, string Label);
+public sealed record StatusFilterOption(OrderStatus? Value, string Label)
+{
+    public override string ToString() => Label;
+}
 
 /// <summary>Une paire de barres du graphique (hauteurs deja converties en pixels).</summary>
 public sealed record BarItem(string Label, double CollectedHeight, double ExpensesHeight, string Tooltip);

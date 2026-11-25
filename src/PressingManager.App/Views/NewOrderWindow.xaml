@@ -83,7 +83,8 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
@@ -97,7 +98,12 @@
                                     <TextBox Text="{Binding QuickCustomerPhone, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
 
-                                <Button Grid.Column="2"
+                                <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                                    <TextBlock Text="{loc:T Ord_QuickEmail}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                    <TextBox Text="{Binding QuickCustomerEmail, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+
+                                <Button Grid.Column="3"
                                         Content="{loc:T Ord_Dlg_QuickCreateBtn}"
                                         Command="{Binding CreateQuickCustomerCommand}"
                                         Style="{StaticResource BtnPrimary}"

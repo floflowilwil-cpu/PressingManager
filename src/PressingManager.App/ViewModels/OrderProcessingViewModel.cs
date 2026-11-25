@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PressingManager.App.Localization;
@@ -9,10 +10,19 @@ using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.ViewModels;
 
-public sealed record StatusOption(OrderStatus Value, string Label);
+public sealed record StatusOption(OrderStatus Value, string Label)
+{
+    public override string ToString() => Label;
+}
+
+/// <summary>Etape visuelle dans la barre de progression d'une commande.</summary>
+public sealed record StatusStepItem(OrderStatus Status, string Label, bool IsReached, bool IsCurrent);
 
 /// <summary>Filtre de la file de traitement : a traiter, en retard, toutes les commandes ou un statut precis.</summary>
-public sealed record ProcessingFilterOption(string Key, OrderStatus? Status, bool OverdueOnly, string Label);
+public sealed record ProcessingFilterOption(string Key, OrderStatus? Status, bool OverdueOnly, string Label)
+{
+    public override string ToString() => Label;
+}
 
 /// <summary>Une ligne resumee d'article dans le panneau de details de la commande.</summary>
 public sealed record OrderItemDisplayRow(string Summary, string LineTotalText, string? Observations);
@@ -69,13 +79,24 @@ public sealed record StatusHistoryRow(OrderStatusHistoryDto Source, string UserT
 
 /// <summary>
 /// Onglet Commandes & Traitement : creation de commandes, recherche, details, paiement direct,
-/// changements de statut et historique.
+/// progression des statuts avec notifications e-mail automatiques et historique.
 /// </summary>
 public partial class OrderProcessingViewModel : ModuleViewModelBase
 {
+    private static readonly OrderStatus[] WorkflowStages =
+    [
+        OrderStatus.Received,
+        OrderStatus.AwaitingProcessing,
+        OrderStatus.Cleaning,
+        OrderStatus.Ironing,
+        OrderStatus.ReadyForPickup,
+        OrderStatus.Delivered
+    ];
+
     private readonly IOrderProcessingService _processing;
     private readonly IOrderService _orderService;
     private readonly IPaymentService _payments;
+    private readonly IEmailNotificationService? _emailService;
 
     private IReadOnlyList<ProcessingOrderDto> _orders = Array.Empty<ProcessingOrderDto>();
     private IReadOnlyDictionary<int, OrderDetailsDto> _orderDetailsById = new Dictionary<int, OrderDetailsDto>();
@@ -86,12 +107,14 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
         IOrderProcessingService processing,
         IOrderService orders,
         IPaymentService payments,
-        ICurrentUserContext session)
+        ICurrentUserContext session,
+        IEmailNotificationService? emailService = null)
         : base(session)
     {
         _processing = processing ?? throw new ArgumentNullException(nameof(processing));
         _orderService = orders ?? throw new ArgumentNullException(nameof(orders));
         _payments = payments ?? throw new ArgumentNullException(nameof(payments));
+        _emailService = emailService;
         _filters = BuildFilters();
         _selectedFilter = _filters[0];
 
@@ -101,6 +124,8 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
     public ObservableCollection<ProcessingRow> Orders { get; } = new();
 
     public ObservableCollection<StatusOption> NextStatuses { get; } = new();
+
+    public ObservableCollection<StatusStepItem> StatusSteps { get; } = new();
 
     public ObservableCollection<StatusHistoryRow> History { get; } = new();
 
@@ -181,6 +206,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
             IsCorrectionMode = false; // relance BuildNextStatuses via OnIsCorrectionModeChanged
         }
 
+        BuildStatusSteps();
         BuildNextStatuses();
         _ = LoadSelectedOrderDetailsAsync(value);
         _ = LoadHistoryAsync(value);
@@ -207,6 +233,8 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
     {
         var order = SelectedOrder ?? throw new BusinessRuleException(Loc.Instance["Proc_SelectOrder"]);
         var target = SelectedNextStatus ?? throw new BusinessRuleException(Loc.Instance["Proc_SelectStatus"]);
+        var comment = NullIfEmpty(CommentText);
+        var previousStatus = order.Status;
 
         // Annulation : action sensible, confirmation obligatoire.
         if (target.Value == OrderStatus.Cancelled
@@ -215,16 +243,74 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
             return false;
         }
 
-        await _processing.ChangeStatusAsync(new ChangeOrderStatusDto(
-            order.OrderId,
-            target.Value,
-            CurrentUserId,
-            IsCorrectionMode,
-            NullIfEmpty(CommentText)));
+        if (IsCorrectionMode)
+        {
+            await _processing.ChangeStatusAsync(new ChangeOrderStatusDto(
+                order.OrderId,
+                target.Value,
+                CurrentUserId,
+                IsAuthorizedCorrection: true,
+                Comment: comment));
+        }
+        else
+        {
+            var path = BuildForwardPath(previousStatus, target.Value);
+            if (path.Count == 0)
+            {
+                await _processing.ChangeStatusAsync(new ChangeOrderStatusDto(
+                    order.OrderId,
+                    target.Value,
+                    CurrentUserId,
+                    IsAuthorizedCorrection: false,
+                    Comment: comment));
+            }
+            else
+            {
+                for (var i = 0; i < path.Count; i++)
+                {
+                    var isFinalStep = i == path.Count - 1;
+                    await _processing.ChangeStatusAsync(new ChangeOrderStatusDto(
+                        order.OrderId,
+                        path[i],
+                        CurrentUserId,
+                        IsAuthorizedCorrection: false,
+                        Comment: isFinalStep ? comment : null));
+                }
+            }
+        }
 
         await RefreshAsync(order.OrderId);
+
+        var statusMsg = Loc.Instance["Proc_StatusChanged"];
+        var details = _orderDetailsById.TryGetValue(order.OrderId, out var cached)
+            ? cached
+            : await _orderService.GetByNumberAsync(order.OrderNumber);
+
+        if (_emailService is not null && !string.IsNullOrWhiteSpace(details?.CustomerEmail))
+        {
+            var items = details.Items
+                .Select(i => $"{i.Quantity} × {i.ItemType} ({MoneyFormatter.FormatFcfa(i.LineTotal)})")
+                .ToList();
+
+            var emailResult = await _emailService.SendOrderStatusChangedAsync(
+                details.CustomerEmail,
+                new OrderStatusEmailDto(
+                    order.OrderNumber,
+                    order.CustomerName,
+                    previousStatus,
+                    target.Value,
+                    details.ExpectedDate,
+                    comment,
+                    items),
+                Loc.Instance.IsEnglish);
+
+            statusMsg += " " + FormatStatusEmailNote(details.CustomerEmail, emailResult);
+        }
+
+        IsError = false;
+        Message = statusMsg;
         return true;
-    }, "Proc_StatusChanged");
+    }, successKey: null);
 
     /// <summary>Appele apres creation d'une commande dans NewOrderWindow.</summary>
     public async Task HandleOrderCreatedAsync(OrderDetailsDto created, bool openPayment)
@@ -289,6 +375,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
         }
 
         RebuildOrders(keepOrderId);
+        BuildStatusSteps();
         await LoadSelectedOrderDetailsAsync(SelectedOrder);
     }
 
@@ -324,6 +411,24 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
         OnPropertyChanged(nameof(CanPaySelectedOrder));
     }
 
+    private void BuildStatusSteps()
+    {
+        StatusSteps.Clear();
+
+        if (SelectedOrder is not { } order)
+        {
+            return;
+        }
+
+        var isCancelled = order.Status == OrderStatus.Cancelled;
+        foreach (var stage in WorkflowStages)
+        {
+            var reached = !isCancelled && (int)stage <= (int)order.Status;
+            var current = !isCancelled && stage == order.Status;
+            StatusSteps.Add(new StatusStepItem(stage, Loc.Instance.Status(stage), reached, current));
+        }
+    }
+
     private void BuildNextStatuses()
     {
         NextStatuses.Clear();
@@ -339,7 +444,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
                     s != current
                     && !OrderStatusRules.GetNextStatuses(current).Contains(s)
                     && OrderStatusRules.CanTransition(current, s, isAuthorizedCorrection: true))
-                : _processing.GetAllowedNextStatuses(current);
+                : GetForwardReachableStatuses(current);
 
             foreach (var status in candidates)
             {
@@ -350,6 +455,92 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
         }
 
         OnPropertyChanged(nameof(HasNoTransition));
+    }
+
+    private static IEnumerable<OrderStatus> GetForwardReachableStatuses(OrderStatus current)
+    {
+        if (OrderStatusRules.IsClosed(current))
+        {
+            yield break;
+        }
+
+        foreach (var stage in WorkflowStages)
+        {
+            if ((int)stage > (int)current && BuildForwardPath(current, stage).Count > 0)
+            {
+                yield return stage;
+            }
+        }
+
+        if (BuildForwardPath(current, OrderStatus.Cancelled).Count > 0)
+        {
+            yield return OrderStatus.Cancelled;
+        }
+    }
+
+    /// <summary>Plus court chemin de transitions normales jusqu'au statut cible (respecte OrderStatusRules).</summary>
+    private static List<OrderStatus> BuildForwardPath(OrderStatus from, OrderStatus target)
+    {
+        if (from == target)
+        {
+            return new List<OrderStatus>();
+        }
+
+        var queue = new Queue<List<OrderStatus>>();
+        var visited = new HashSet<OrderStatus> { from };
+
+        foreach (var next in OrderStatusRules.GetNextStatuses(from))
+        {
+            var path = new List<OrderStatus> { next };
+            if (next == target)
+            {
+                return path;
+            }
+
+            if (visited.Add(next))
+            {
+                queue.Enqueue(path);
+            }
+        }
+
+        while (queue.Count > 0)
+        {
+            var path = queue.Dequeue();
+            var last = path[^1];
+
+            foreach (var next in OrderStatusRules.GetNextStatuses(last))
+            {
+                if (!visited.Add(next))
+                {
+                    continue;
+                }
+
+                var extended = new List<OrderStatus>(path) { next };
+                if (next == target)
+                {
+                    return extended;
+                }
+
+                queue.Enqueue(extended);
+            }
+        }
+
+        return new List<OrderStatus>();
+    }
+
+    private static string FormatStatusEmailNote(string email, EmailDeliveryResult result)
+    {
+        if (result.SentViaSmtp)
+        {
+            return Loc.Instance.Format("Ord_StatusEmailSent", email);
+        }
+
+        if (result.SavedLocally && result.LocalFilePath is { } path)
+        {
+            return Loc.Instance.Format("Ord_StatusEmailSaved", Path.GetFileName(path));
+        }
+
+        return Loc.Instance.Format("Ord_StatusEmailWarn", result.ErrorMessage ?? "Erreur SMTP");
     }
 
     private async Task LoadSelectedOrderDetailsAsync(ProcessingRow? order)
@@ -392,14 +583,10 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
 
             var totalAmount = details?.Total ?? order.TotalAmount;
             var totalFormatted = MoneyFormatter.FormatFcfa(totalAmount);
-            var balanceFormatted = balance <= 0m
-                ? Loc.Instance["Ord_FullyPaid"]
-                : MoneyFormatter.FormatFcfa(balance);
 
-            SelectedOrderBillingText = Loc.Instance.Format(
-                "Ord_BillingSummary",
-                totalFormatted,
-                balanceFormatted);
+            SelectedOrderBillingText = balance <= 0m
+                ? Loc.Instance.Format("Ord_BillingSummaryPaid", totalFormatted)
+                : Loc.Instance.Format("Ord_BillingSummary", totalFormatted, MoneyFormatter.FormatFcfa(balance));
         }
         catch (Exception ex) when (ex is BusinessRuleException or PermissionDeniedException or InvalidOperationException)
         {
@@ -490,6 +677,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
         _orders = Array.Empty<ProcessingOrderDto>();
         _orderDetailsById = new Dictionary<int, OrderDetailsDto>();
         SearchText = string.Empty;
+        StatusSteps.Clear();
         SelectedOrderItems.Clear();
         SelectedOrderBillingText = string.Empty;
         RebuildOrders(null);
@@ -514,6 +702,7 @@ public partial class OrderProcessingViewModel : ModuleViewModelBase
         var keepStatusValue = SelectedNextStatus?.Value;
 
         RebuildOrders(SelectedOrder?.OrderId);
+        BuildStatusSteps();
         _ = LoadSelectedOrderDetailsAsync(SelectedOrder);
 
         // RebuildOrders reselectionne une nouvelle ligne : on retablit le statut choisi dans la nouvelle liste.

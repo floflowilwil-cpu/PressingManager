@@ -9,12 +9,24 @@ using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.ViewModels;
 
-public sealed record CustomerOption(int Id, string FullName, string Phone, string CustomerNumber)
+public sealed record CustomerOption(
+    int Id,
+    string FullName,
+    string Phone,
+    string CustomerNumber,
+    string? Email = null)
 {
-    public string DisplayLabel => $"{FullName} ({Phone}) — {CustomerNumber}";
+    public string DisplayLabel => string.IsNullOrWhiteSpace(Email)
+        ? $"{FullName} ({Phone}) — {CustomerNumber}"
+        : $"{FullName} ({Phone} · {Email}) — {CustomerNumber}";
+
+    public override string ToString() => DisplayLabel;
 }
 
-public sealed record ServiceOption(int Id, string Name, decimal DefaultPrice, string DisplayLabel);
+public sealed record ServiceOption(int Id, string Name, decimal DefaultPrice, string DisplayLabel)
+{
+    public override string ToString() => DisplayLabel;
+}
 
 public sealed record DraftOrderItem(
     int ServiceId,
@@ -93,6 +105,9 @@ public partial class NewOrderViewModel : ModuleViewModelBase
     private string _quickCustomerPhone = string.Empty;
 
     [ObservableProperty]
+    private string _quickCustomerEmail = string.Empty;
+
+    [ObservableProperty]
     private string _itemTypeText = string.Empty;
 
     [ObservableProperty]
@@ -143,7 +158,7 @@ public partial class NewOrderViewModel : ModuleViewModelBase
             var customerList = await _customers.SearchAsync(string.Empty);
             foreach (var c in customerList)
             {
-                Customers.Add(new CustomerOption(c.Id, c.FullName, c.Phone, c.CustomerNumber));
+                Customers.Add(new CustomerOption(c.Id, c.FullName, c.Phone, c.CustomerNumber, c.Email));
             }
         }
 
@@ -183,21 +198,28 @@ public partial class NewOrderViewModel : ModuleViewModelBase
     [RelayCommand]
     private Task CreateQuickCustomerAsync() => RunAsync(async () =>
     {
-        var created = await _customers.CreateAsync(
-            new CreateCustomerDto(QuickCustomerName, QuickCustomerPhone));
+        var created = await CreateQuickCustomerInternalAsync();
 
-        var option = new CustomerOption(created.Id, created.FullName, created.Phone, created.CustomerNumber);
+        Message = Loc.Instance.Format("Ord_Dlg_QuickCreated", created.FullName);
+        IsError = false;
+    }, successKey: null);
+
+    private async Task<CustomerOption> CreateQuickCustomerInternalAsync()
+    {
+        var created = await _customers.CreateAsync(
+            new CreateCustomerDto(QuickCustomerName, QuickCustomerPhone, Email: QuickCustomerEmail));
+
+        var option = new CustomerOption(created.Id, created.FullName, created.Phone, created.CustomerNumber, created.Email);
         Customers.Insert(0, option);
         SelectedCustomer = option;
 
         QuickCustomerName = string.Empty;
         QuickCustomerPhone = string.Empty;
+        QuickCustomerEmail = string.Empty;
         IsQuickCustomerVisible = false;
         OnPropertyChanged(nameof(HasNoCustomers));
-
-        Message = Loc.Instance.Format("Ord_Dlg_QuickCreated", created.FullName);
-        IsError = false;
-    }, successKey: null);
+        return option;
+    }
 
     [RelayCommand]
     private Task AddItemAsync() => RunAsync(() =>
@@ -244,6 +266,14 @@ public partial class NewOrderViewModel : ModuleViewModelBase
         IsBusy = true;
         try
         {
+            if (SelectedCustomer is null
+                && CanManageCustomers
+                && !string.IsNullOrWhiteSpace(QuickCustomerName)
+                && !string.IsNullOrWhiteSpace(QuickCustomerPhone))
+            {
+                await CreateQuickCustomerInternalAsync();
+            }
+
             var customer = SelectedCustomer
                 ?? throw new BusinessRuleException(Loc.Instance["Ord_Err_SelectCustomer"]);
 

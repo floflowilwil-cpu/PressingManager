@@ -9,7 +9,10 @@ using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.ViewModels;
 
-public sealed record BillingUnitOption(BillingUnit Value, string Label);
+public sealed record BillingUnitOption(BillingUnit Value, string Label)
+{
+    public override string ToString() => Label;
+}
 
 /// <summary>Une ligne du catalogue (tarifs en vigueur traduits selon la langue courante).</summary>
 public sealed record ServiceRow(ServiceDto Source)

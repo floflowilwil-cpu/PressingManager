@@ -312,11 +312,53 @@
                                 <TextBox Text="{Binding PaymentAmountText, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Visibility="{Binding IsMobileMoneySelected, Converter={StaticResource BoolToVisibility}}">
-                                <TextBlock Text="{loc:T Pay_MobileMoneyRef}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
-                                <TextBox Text="{Binding TransactionReference, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{loc:T Pay_PayerEmail}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding PayerEmail, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
                             </StackPanel>
                         </Grid>
+
+                        <!-- Zone Mobile Money : numero payeur + envoi prompt USSD + reference -->
+                        <Border Background="#FFFBEB"
+                                BorderBrush="#FDE68A"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12"
+                                Margin="0,12,0,0"
+                                Visibility="{Binding IsMobileMoneySelected, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                        <TextBlock Text="{loc:T Pay_PayerPhone}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                        <TextBox Text="{Binding PayerPhone, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                        <TextBlock Text="{loc:T Pay_MobileMoneyRef}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                        <TextBox Text="{Binding TransactionReference, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2"
+                                            Content="{loc:T Pay_SendUssdBtn}"
+                                            Command="{Binding TriggerMobileMoneyCommand}"
+                                            Background="#D97706"
+                                            Style="{StaticResource RoundedButton}"
+                                            VerticalAlignment="Bottom" />
+                                </Grid>
+
+                                <TextBlock Text="{Binding MobileMoneyModeLabel}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="#92400E"
+                                           Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Border>
 
                         <Button Command="{Binding RegisterPaymentCommand}" Background="#10B981" Style="{StaticResource RoundedButton}" Margin="0,14,0,0">
                             <StackPanel Orientation="Horizontal">

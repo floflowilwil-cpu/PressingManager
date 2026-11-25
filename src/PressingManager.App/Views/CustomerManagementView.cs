@@ -34,6 +34,7 @@ public sealed class CustomerManagementView : UserControl
     private readonly TextBlock _formTitle = new() { FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Solid("#12365D"), Margin = new Thickness(0, 0, 0, 2) };
     private readonly TextBox _name = Input(150);
     private readonly TextBox _phone = Input(30);
+    private readonly TextBox _email = Input(200);
     private readonly TextBox _address = Input(300);
     private readonly TextBox _notes = Input(1000, multiline: true);
     private readonly Button _saveButton = ActionButton("Créer le client", "BtnPrimary");
@@ -110,7 +111,7 @@ public sealed class CustomerManagementView : UserControl
         if (_current is null)
         {
             var created = await _customers.CreateAsync(
-                new CreateCustomerDto(_name.Text, _phone.Text, _address.Text, _notes.Text));
+                new CreateCustomerDto(_name.Text, _phone.Text, _address.Text, _notes.Text, _email.Text));
 
             // On affiche la liste complète des clients actifs pour retrouver le nouveau client.
             _search.Text = string.Empty;
@@ -121,7 +122,7 @@ public sealed class CustomerManagementView : UserControl
         else
         {
             var updated = await _customers.UpdateAsync(
-                new UpdateCustomerDto(_current.Id, _name.Text, _phone.Text, _address.Text, _notes.Text));
+                new UpdateCustomerDto(_current.Id, _name.Text, _phone.Text, _address.Text, _notes.Text, _email.Text));
 
             await LoadListAsync(updated.Id);
             ShowMessage("Client modifié.", false);
@@ -171,6 +172,7 @@ public sealed class CustomerManagementView : UserControl
         _current = customer;
         _name.Text = customer.FullName;
         _phone.Text = customer.Phone;
+        _email.Text = customer.Email ?? string.Empty;
         _address.Text = customer.Address ?? string.Empty;
         _notes.Text = customer.Notes ?? string.Empty;
 
@@ -219,6 +221,7 @@ public sealed class CustomerManagementView : UserControl
         _current = null;
         _name.Text = string.Empty;
         _phone.Text = string.Empty;
+        _email.Text = string.Empty;
         _address.Text = string.Empty;
         _notes.Text = string.Empty;
         _ordersGrid.ItemsSource = null;
@@ -367,7 +370,8 @@ public sealed class CustomerManagementView : UserControl
 
         _customersGrid.Columns.Add(Column("Numéro", "CustomerNumber", 110));
         _customersGrid.Columns.Add(Column("Nom", "FullName", 0));
-        _customersGrid.Columns.Add(Column("Téléphone", "Phone", 150));
+        _customersGrid.Columns.Add(Column("Téléphone", "Phone", 130));
+        _customersGrid.Columns.Add(Column("E-mail", "Email", 190));
 
         var listBody = new Grid();
         listBody.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -419,6 +423,8 @@ public sealed class CustomerManagementView : UserControl
         form.Children.Add(_name);
         form.Children.Add(Caption("Téléphone *"));
         form.Children.Add(_phone);
+        form.Children.Add(Caption("E-mail (reçus & suivi)"));
+        form.Children.Add(_email);
         form.Children.Add(Caption("Adresse"));
         form.Children.Add(_address);
         form.Children.Add(Caption("Notes"));
