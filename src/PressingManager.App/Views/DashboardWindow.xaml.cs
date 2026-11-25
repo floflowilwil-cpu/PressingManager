@@ -54,6 +54,7 @@ public partial class DashboardWindow : Window
         ICurrentUserContext session)
     {
         InitializeComponent();
+        SetNavigationMenu(false);
 
         _customerView = customerView ?? throw new ArgumentNullException(nameof(customerView));
         _orderProcessingView = orderProcessingView ?? throw new ArgumentNullException(nameof(orderProcessingView));
@@ -89,6 +90,19 @@ public partial class DashboardWindow : Window
             ShowUser();
             await RefreshHomeAsync();
         };
+    }
+
+    // ---------- Menu lateral escamotable ----------
+
+    private void SetNavigationMenu(bool isOpen)
+    {
+        SidebarHost.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
+        SidebarColumn.Width = isOpen ? new GridLength(256) : new GridLength(0);
+    }
+
+    private void BtnToggleMenu_Click(object sender, RoutedEventArgs e)
+    {
+        SetNavigationMenu(SidebarHost.Visibility != Visibility.Visible);
     }
 
     // ---------- Droits et utilisateur ----------
@@ -228,9 +242,10 @@ public partial class DashboardWindow : Window
         await _settingsView.RefreshAsync();
     }
 
-    /// <summary>Seule la zone de droite change : le menu lateral reste toujours affiche.</summary>
+    /// <summary>Change le module affiche et referme le menu apres la selection.</summary>
     private void SwitchSection(Section section)
     {
+        SetNavigationMenu(false);
         HomeHost.Visibility = Show(section == Section.Home);
         CustomersHost.Visibility = Show(section == Section.Customers);
         OrdersHost.Visibility = Show(section == Section.Orders);
