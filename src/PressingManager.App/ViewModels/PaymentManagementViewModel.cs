@@ -35,6 +35,7 @@ public partial class PaymentManagementViewModel : ObservableObject
     private readonly IExpenseService _expenses;
     private readonly IOrderBillingInfoProvider _orderBilling;
     private readonly ICurrentUserContext _session;
+    private readonly IOrderService? _orders;
 
     private IReadOnlyList<PaymentDto> _loadedPayments = Array.Empty<PaymentDto>();
 
@@ -43,13 +44,15 @@ public partial class PaymentManagementViewModel : ObservableObject
         ICashService cash,
         IExpenseService expenses,
         IOrderBillingInfoProvider orderBilling,
-        ICurrentUserContext session)
+        ICurrentUserContext session,
+        IOrderService? orders = null)
     {
         _payments = payments ?? throw new ArgumentNullException(nameof(payments));
         _cash = cash ?? throw new ArgumentNullException(nameof(cash));
         _expenses = expenses ?? throw new ArgumentNullException(nameof(expenses));
         _orderBilling = orderBilling ?? throw new ArgumentNullException(nameof(orderBilling));
         _session = session ?? throw new ArgumentNullException(nameof(session));
+        _orders = orders;
 
         _expenseMethods = BuildExpenseMethods();
         Loc.Instance.LanguageChanged += OnLanguageChanged;
@@ -187,16 +190,47 @@ public partial class PaymentManagementViewModel : ObservableObject
     [RelayCommand]
     private Task LoadOrderAsync() => RunAsync(async () =>
     {
-        if (!int.TryParse(OrderIdText.Trim(), out var orderId) || orderId <= 0)
+        var input = (OrderIdText ?? string.Empty).Trim();
+        var numericCandidate = input.StartsWith('#') ? input[1..] : input;
+        int orderId;
+
+        if (int.TryParse(numericCandidate, out var parsedId) && parsedId > 0)
+        {
+            orderId = parsedId;
+        }
+        else if (_orders is not null && input.Length > 0)
+        {
+            var found = await _orders.GetByNumberAsync(input)
+                ?? throw new InvalidOperationException(Loc.Instance.Format("Pay_Err_OrderNumberNotFound", input));
+
+            orderId = found.Id;
+            OrderIdText = orderId.ToString(CultureInfo.InvariantCulture);
+        }
+        else
         {
             throw new InvalidOperationException(Loc.Instance["Pay_Err_InvalidOrderId"]);
         }
 
+        await LoadOrderAndPrefillAsync(orderId);
+    }, successKey: null);
+
+    /// <summary>Charge directement une commande (utilise lors du clic sur Encaisser depuis l'onglet Commandes).</summary>
+    public Task LoadOrderByIdAsync(int orderId) => RunAsync(async () =>
+    {
+        Message = null;
+        OrderIdText = orderId.ToString(CultureInfo.InvariantCulture);
+        CurrentCashSession = await _cash.GetCurrentAsync();
+        await RefreshExpensesAsync();
+        await LoadOrderAndPrefillAsync(orderId);
+    }, successKey: null);
+
+    private async Task LoadOrderAndPrefillAsync(int orderId)
+    {
         await RefreshOrderAsync(orderId);
         PaymentAmountText = RemainingBalance > 0m
             ? RemainingBalance.ToString("0.##", CultureInfo.CurrentCulture)
             : string.Empty;
-    }, successKey: null);
+    }
 
     [RelayCommand]
     private Task RegisterPaymentAsync() => RunAsync(async () =>

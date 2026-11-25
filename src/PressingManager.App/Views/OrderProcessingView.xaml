@@ -53,7 +53,7 @@
         <Grid Visibility="{Binding CanView, Converter={StaticResource BoolToVisibility}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="360" />
+                <ColumnDefinition Width="390" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -61,21 +61,35 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,18">
-                <Border Width="38" Height="38" CornerRadius="10" Background="#0F2A4A" Margin="0,0,12,0">
-                    <Viewbox Width="22" Height="22">
-                        <Canvas Width="24" Height="24">
-                            <Path Stroke="#14B8A6" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  Data="M12,3 C7,3 3,7 3,12 C3,17 7,21 12,21 C17,21 21,17 21,12 C21,7 17,3 12,3 Z M12,7 L12,12 L15.5,14" />
-                        </Canvas>
-                    </Viewbox>
-                </Border>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{loc:T Proc_Title}" FontSize="25" FontWeight="Bold" Foreground="#142B45" />
-                    <TextBlock Text="{loc:T Proc_Subtitle}" FontSize="12" Foreground="#64748B" />
+            <Grid Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="38" Height="38" CornerRadius="10" Background="#0F2A4A" Margin="0,0,12,0">
+                        <Viewbox Width="22" Height="22">
+                            <Canvas Width="24" Height="24">
+                                <Path Stroke="#14B8A6" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Data="M12,3 C7,3 3,7 3,12 C3,17 7,21 12,21 C17,21 21,17 21,12 C21,7 17,3 12,3 Z M12,7 L12,12 L15.5,14" />
+                            </Canvas>
+                        </Viewbox>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T Proc_Title}" FontSize="25" FontWeight="Bold" Foreground="#142B45" />
+                        <TextBlock Text="{loc:T Proc_Subtitle}" FontSize="12" Foreground="#64748B" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="{loc:T Ord_NewOrderBtn}"
+                        Style="{StaticResource BtnPrimary}"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding CanCreateOrder, Converter={StaticResource BoolToVisibility}}"
+                        Click="BtnNewOrder_Click" />
+            </Grid>
 
             <!-- GAUCHE : file de traitement -->
             <Border Grid.Row="1" Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,16,0">
@@ -90,9 +104,13 @@
                                 Style="{StaticResource LightButton}" Margin="12,0,0,0" />
                         <TextBlock DockPanel.Dock="Right" Text="{Binding SummaryText}" Foreground="#64748B"
                                    VerticalAlignment="Center" />
-                        <ComboBox ItemsSource="{Binding Filters}" DisplayMemberPath="Label"
-                                  SelectedItem="{Binding SelectedFilter}" Width="240" HorizontalAlignment="Left"
-                                  />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <ComboBox ItemsSource="{Binding Filters}" DisplayMemberPath="Label"
+                                      SelectedItem="{Binding SelectedFilter}" Width="210" />
+                            <TextBox Width="190" Margin="10,0,0,0"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="{loc:T Ord_SearchHint}" />
+                        </StackPanel>
                     </DockPanel>
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Orders}"
@@ -102,28 +120,68 @@
                               HeadersVisibility="Column" GridLinesVisibility="Horizontal" CanUserAddRows="False"
                               BorderThickness="0" Background="White" RowHeight="42">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{loc:T Proc_ColNumber}" Binding="{Binding OrderNumber}" Width="120" />
+                            <DataGridTextColumn Header="{loc:T Ord_ColId}" Binding="{Binding OrderIdText}" Width="58" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColNumber}" Binding="{Binding OrderNumber}" Width="135" />
                             <DataGridTextColumn Header="{loc:T Proc_ColCustomer}" Binding="{Binding CustomerName}" Width="*" />
-                            <DataGridTextColumn Header="{loc:T Proc_ColStatus}" Binding="{Binding StatusText}" Width="170" />
-                            <DataGridTextColumn Header="{loc:T Proc_ColExpected}" Binding="{Binding ExpectedText}" Width="100" />
-                            <DataGridTextColumn Header="{loc:T Proc_ColItems}" Binding="{Binding ItemCount}" Width="70" />
-                            <DataGridTextColumn Header="{loc:T Proc_ColFlag}" Binding="{Binding FlagText}" Width="110" />
+                            <DataGridTextColumn Header="{loc:T Ord_ColTotal}" Binding="{Binding TotalText}" Width="105" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColStatus}" Binding="{Binding StatusText}" Width="140" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColExpected}" Binding="{Binding ExpectedText}" Width="95" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColItems}" Binding="{Binding ItemCount}" Width="65" />
+                            <DataGridTextColumn Header="{loc:T Proc_ColFlag}" Binding="{Binding FlagText}" Width="95" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </Border>
 
-            <!-- DROITE : changement de statut et historique de la commande selectionnee -->
+            <!-- DROITE : resume financier, articles, changement de statut et historique -->
             <Border Grid.Row="1" Grid.Column="1" Padding="18" Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="{loc:T Proc_Selected}" FontWeight="Bold" Foreground="#0F8F91" />
 
-                        <TextBlock Margin="0,6,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#12365D">
+                        <TextBlock Margin="0,6,0,0" FontSize="15" FontWeight="SemiBold" Foreground="#12365D"
+                                   Visibility="{Binding IsOrderSelected, Converter={StaticResource BoolToVisibility}}">
+                            <Run Text="{Binding SelectedOrder.OrderIdText, Mode=OneWay}" />
+                            <Run Text=" · " />
                             <Run Text="{Binding SelectedOrder.OrderNumber, Mode=OneWay}" />
                             <Run Text=" · " />
                             <Run Text="{Binding SelectedOrder.StatusText, Mode=OneWay}" />
                         </TextBlock>
+
+                        <!-- Encadre client / solde / articles / bouton Encaisser -->
+                        <Border Background="#F8FAFC" BorderBrush="#DCE6EF" BorderThickness="1" CornerRadius="8"
+                                Padding="12" Margin="0,10,0,0"
+                                Visibility="{Binding IsOrderSelected, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedOrder.CustomerName}" FontWeight="Bold"
+                                           Foreground="#12365D" FontSize="13" />
+                                <TextBlock Text="{Binding SelectedOrderBillingText}" FontWeight="SemiBold"
+                                           Foreground="#065F46" FontSize="12" Margin="0,3,0,8" TextWrapping="Wrap" />
+
+                                <TextBlock Text="{loc:T Ord_ItemsTitle}" FontSize="11" FontWeight="Bold"
+                                           Foreground="#64748B" Margin="0,2,0,4" />
+
+                                <ItemsControl ItemsSource="{Binding SelectedOrderItems}" Margin="0,0,0,4">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,3">
+                                                <TextBlock Text="{Binding Summary}" FontSize="12" Foreground="#24364B" />
+                                                <TextBlock Text="{Binding LineTotalText}" FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#12365D" HorizontalAlignment="Right" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Button Content="{loc:T Ord_PayBtn}"
+                                        Command="{Binding PaySelectedOrderCommand}"
+                                        IsEnabled="{Binding CanPaySelectedOrder}"
+                                        Background="#10B981"
+                                        Style="{StaticResource BtnPrimary}"
+                                        Margin="0,8,0,0"
+                                        Visibility="{Binding CanPayOrder, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
+                        </Border>
 
                         <StackPanel IsEnabled="{Binding IsOrderSelected}"
                                     Visibility="{Binding CanChangeStatus, Converter={StaticResource BoolToVisibility}}">

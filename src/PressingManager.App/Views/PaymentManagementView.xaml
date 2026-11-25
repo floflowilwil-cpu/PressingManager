@@ -147,12 +147,13 @@
 
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="180" />
+                                <ColumnDefinition Width="210" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
                             <TextBox Grid.Column="0" Text="{Binding OrderIdText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="{loc:T Pay_OrderLookupTooltip}"
                                      Padding="8" VerticalContentAlignment="Center" Margin="0,0,10,0" />
                             <Button Grid.Column="1" Content="{loc:T Pay_LoadOrderBtn}" Command="{Binding LoadOrderCommand}"
                                     Style="{StaticResource RoundedButton}" />
