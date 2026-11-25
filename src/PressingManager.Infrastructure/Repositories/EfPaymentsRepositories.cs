@@ -213,6 +213,8 @@ public sealed class EfOrderBillingInfoProvider : IOrderBillingInfoProvider
                 order.Total,
                 order.Status == OrderStatus.Cancelled,
                 order.OrderNumber,
-                order.Customer?.FullName);
+                order.Customer?.FullName,
+                order.Customer?.Phone,
+                order.Customer?.Email);
     }
 }
