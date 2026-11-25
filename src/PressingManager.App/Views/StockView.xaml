@@ -34,7 +34,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="32">
+    <Grid Margin="26">
         <!-- ACCES REFUSE (role sans la permission ViewStock) -->
         <Border Background="White" CornerRadius="10" Padding="30" VerticalAlignment="Top"
                 Visibility="{Binding IsAccessDenied, Converter={StaticResource BoolToVisibility}}">
@@ -63,7 +63,7 @@
                     </Viewbox>
                 </Border>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{loc:T Stock_Title}" FontSize="22" FontWeight="Bold" Foreground="#0F2A4A" />
+                    <TextBlock Text="{loc:T Stock_Title}" FontSize="25" FontWeight="Bold" Foreground="#142B45" />
                     <TextBlock Text="{loc:T Stock_Subtitle}" FontSize="12" Foreground="#64748B" />
                 </StackPanel>
             </StackPanel>
@@ -118,7 +118,7 @@
                     </Grid>
                 </Border>
 
-                <TextBlock Grid.Row="1" Text="{loc:T Stock_Movements}" FontWeight="Bold" Foreground="#08A6B5"
+                <TextBlock Grid.Row="1" Text="{loc:T Stock_Movements}" FontWeight="Bold" Foreground="#0F8F91"
                            Margin="2,14,0,6" />
 
                 <Border Grid.Row="2" Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12" Padding="16">
@@ -155,7 +155,7 @@
                         </TextBlock>
 
                         <StackPanel Visibility="{Binding CanManage, Converter={StaticResource BoolToVisibility}}">
-                            <TextBlock Text="{loc:T Stock_NewProduct}" FontWeight="Bold" Foreground="#08A6B5" />
+                            <TextBlock Text="{loc:T Stock_NewProduct}" FontWeight="Bold" Foreground="#0F8F91" />
 
                             <TextBlock Text="{loc:T Stock_Name}" Style="{StaticResource FieldLabel}" />
                             <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" />
@@ -171,7 +171,7 @@
 
                             <Separator Margin="0,20" />
 
-                            <TextBlock Text="{loc:T Stock_SelectedProduct}" FontWeight="Bold" Foreground="#08A6B5" />
+                            <TextBlock Text="{loc:T Stock_SelectedProduct}" FontWeight="Bold" Foreground="#0F8F91" />
 
                             <TextBlock Text="{loc:T Stock_Name}" Style="{StaticResource FieldLabel}" />
                             <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" />
@@ -187,7 +187,7 @@
 
                             <Separator Margin="0,20" />
 
-                            <TextBlock Text="{loc:T Stock_NewMovement}" FontWeight="Bold" Foreground="#08A6B5" />
+                            <TextBlock Text="{loc:T Stock_NewMovement}" FontWeight="Bold" Foreground="#0F8F91" />
 
                             <TextBlock Text="{loc:T Stock_MoveType}" Style="{StaticResource FieldLabel}" />
                             <ComboBox ItemsSource="{Binding MovementTypes}" DisplayMemberPath="Label"

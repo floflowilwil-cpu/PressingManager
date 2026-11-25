@@ -30,7 +30,7 @@
 
     </UserControl.Resources>
 
-    <Grid Margin="32">
+    <Grid Margin="26">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="330" />
@@ -53,7 +53,7 @@
                 </Viewbox>
             </Border>
             <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="{loc:T Svc_Title}" FontSize="22" FontWeight="Bold" Foreground="#0F2A4A" />
+                <TextBlock Text="{loc:T Svc_Title}" FontSize="25" FontWeight="Bold" Foreground="#142B45" />
                 <TextBlock Text="{loc:T Svc_Subtitle}" FontSize="12" Foreground="#64748B" />
             </StackPanel>
         </StackPanel>
@@ -91,7 +91,7 @@
                 </Grid>
             </Border>
 
-            <TextBlock Grid.Row="1" Text="{loc:T Svc_PriceHistory}" FontWeight="Bold" Foreground="#08A6B5"
+            <TextBlock Grid.Row="1" Text="{loc:T Svc_PriceHistory}" FontWeight="Bold" Foreground="#0F8F91"
                        Margin="2,14,0,6" />
 
             <Border Grid.Row="2" Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12" Padding="16">
@@ -117,7 +117,7 @@
                                Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVisibility}}" />
 
                     <StackPanel Visibility="{Binding CanManage, Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="{loc:T Svc_NewService}" FontWeight="Bold" Foreground="#08A6B5" />
+                        <TextBlock Text="{loc:T Svc_NewService}" FontWeight="Bold" Foreground="#0F8F91" />
 
                         <TextBlock Text="{loc:T Svc_Name}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" />
@@ -131,7 +131,7 @@
 
                         <Separator Margin="0,20" />
 
-                        <TextBlock Text="{loc:T Svc_Selected}" FontWeight="Bold" Foreground="#08A6B5" />
+                        <TextBlock Text="{loc:T Svc_Selected}" FontWeight="Bold" Foreground="#0F8F91" />
 
                         <TextBlock Text="{loc:T Svc_Name}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" />
@@ -147,7 +147,7 @@
 
                         <Separator Margin="0,20" />
 
-                        <TextBlock Text="{loc:T Svc_NewPrice}" FontWeight="Bold" Foreground="#08A6B5" />
+                        <TextBlock Text="{loc:T Svc_NewPrice}" FontWeight="Bold" Foreground="#0F8F91" />
 
                         <TextBlock Text="{loc:T Svc_Unit}" Style="{StaticResource FieldLabel}" />
                         <ComboBox ItemsSource="{Binding Units}" DisplayMemberPath="Label" SelectedValuePath="Value"

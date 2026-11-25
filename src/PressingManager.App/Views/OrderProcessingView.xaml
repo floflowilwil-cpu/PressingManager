@@ -43,7 +43,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="32">
+    <Grid Margin="26">
         <!-- ACCES REFUSE (role sans la permission ViewOrders) -->
         <Border Background="White" CornerRadius="10" Padding="30" VerticalAlignment="Top"
                 Visibility="{Binding IsAccessDenied, Converter={StaticResource BoolToVisibility}}">
@@ -72,7 +72,7 @@
                     </Viewbox>
                 </Border>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{loc:T Proc_Title}" FontSize="22" FontWeight="Bold" Foreground="#0F2A4A" />
+                    <TextBlock Text="{loc:T Proc_Title}" FontSize="25" FontWeight="Bold" Foreground="#142B45" />
                     <TextBlock Text="{loc:T Proc_Subtitle}" FontSize="12" Foreground="#64748B" />
                 </StackPanel>
             </StackPanel>
@@ -117,7 +117,7 @@
             <Border Grid.Row="1" Grid.Column="1" Padding="18" Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="{loc:T Proc_Selected}" FontWeight="Bold" Foreground="#08A6B5" />
+                        <TextBlock Text="{loc:T Proc_Selected}" FontWeight="Bold" Foreground="#0F8F91" />
 
                         <TextBlock Margin="0,6,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#12365D">
                             <Run Text="{Binding SelectedOrder.OrderNumber, Mode=OneWay}" />
@@ -149,7 +149,7 @@
 
                         <Separator Margin="0,20" />
 
-                        <TextBlock Text="{loc:T Proc_History}" FontWeight="Bold" Foreground="#08A6B5" />
+                        <TextBlock Text="{loc:T Proc_History}" FontWeight="Bold" Foreground="#0F8F91" />
 
                         <DataGrid ItemsSource="{Binding History}" AutoGenerateColumns="False" IsReadOnly="True"
                                   SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
