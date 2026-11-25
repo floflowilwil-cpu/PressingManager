@@ -231,13 +231,15 @@ public sealed class CampayMobileMoneyGateway : IMobileMoneyGateway
                 IsSimulated: false,
                 StatusMessage: "Demande de paiement annulée.");
         }
-        catch (Exception ex) when (ex is HttpRequestException or JsonException)
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
         {
             return new MobileMoneyChargeResult(
                 Success: false,
                 OperatorReference: null,
                 IsSimulated: false,
-                StatusMessage: $"Erreur réseau passerelle Mobile Money : {ex.Message}");
+                StatusMessage: ex is InvalidOperationException
+                    ? ex.Message
+                    : $"Erreur réseau passerelle Mobile Money : {ex.Message}");
         }
     }
 
@@ -257,8 +259,11 @@ public sealed class CampayMobileMoneyGateway : IMobileMoneyGateway
             JsonOptions,
             cancellationToken);
 
-        resp.EnsureSuccessStatusCode();
         var body = await resp.Content.ReadAsStringAsync(cancellationToken);
+        if (!resp.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"Authentification Campay refusée ({(int)resp.StatusCode}) : {body}");
+        }
         using var doc = JsonDocument.Parse(body);
         var token = doc.RootElement.TryGetProperty("token", out var tokenProp)
             ? tokenProp.GetString()

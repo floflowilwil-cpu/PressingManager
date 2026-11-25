@@ -192,7 +192,7 @@ public sealed class SmtpEmailNotificationService : IEmailNotificationService
     {
         if (settings.Enabled
             && !string.IsNullOrWhiteSpace(settings.SmtpHost)
-            && TryNormalizeEmail(settings.FromAddress, out _))
+            && (TryNormalizeEmail(settings.FromAddress, out _) || TryNormalizeEmail(settings.Username, out _)))
         {
             try
             {
@@ -214,7 +214,11 @@ public sealed class SmtpEmailNotificationService : IEmailNotificationService
             }
             catch (Exception ex) when (ex is SmtpException or InvalidOperationException or IOException)
             {
-                return new EmailDeliveryResult(false, false, null, ex.Message);
+                var detail = ex.InnerException is { Message: { Length: > 0 } innerMsg }
+                    && !ex.Message.Contains(innerMsg, StringComparison.OrdinalIgnoreCase)
+                    ? $"{ex.Message} ({innerMsg})"
+                    : ex.Message;
+                return new EmailDeliveryResult(false, false, null, detail);
             }
         }
 

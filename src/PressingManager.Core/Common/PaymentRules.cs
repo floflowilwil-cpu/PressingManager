@@ -70,18 +70,6 @@ public static class PaymentRules
                 throw new InvalidOperationException(
                     "Une reference de transaction est obligatoire pour un paiement Mobile Money.");
             }
-
-            var normalizedReference = reference.Trim();
-            var isDuplicate = paymentList.Any(p =>
-                p.Status == PaymentStatus.Valid
-                && !string.IsNullOrWhiteSpace(p.Reference)
-                && string.Equals(p.Reference.Trim(), normalizedReference, StringComparison.OrdinalIgnoreCase));
-
-            if (isDuplicate)
-            {
-                throw new InvalidOperationException(
-                    $"La reference de transaction '{normalizedReference}' existe deja.");
-            }
         }
 
         if (RequiresCashSession(method) && !hasOpenCashSession)

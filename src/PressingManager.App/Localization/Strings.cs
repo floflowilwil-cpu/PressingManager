@@ -464,7 +464,7 @@ internal static class Strings
         ["Ord_BillingSummaryPaid"] = "Total : {0}  •  Soldée ✓",
         ["Ord_ProgressTitle"] = "PROGRESSION DE LA COMMANDE",
         ["Ord_StatusEmailSent"] = "E-mail envoyé à {0}.",
-        ["Ord_StatusEmailSaved"] = "E-mail enregistré localement ({0}).",
+        ["Ord_StatusEmailSaved"] = "SMTP désactivé — e-mail .eml enregistré dans outbox ({0}).",
         ["Ord_StatusEmailWarn"] = "Notification e-mail non envoyée : {0}",
         ["Pay_PayerPhone"] = "Téléphone payeur (MTN / Orange)",
         ["Pay_PayerEmail"] = "E-mail du payeur (envoi auto du reçu PDF)",
@@ -477,7 +477,7 @@ internal static class Strings
         ["Pay_UssdSimConfirmed"] = "Simulation USSD confirmée (réf. {0}). Cliquez sur Valider pour encaisser.",
         ["Pay_UssdLiveConfirmed"] = "Paiement confirmé sur le téléphone (réf. {0}). Cliquez sur Valider pour encaisser.",
         ["Pay_ReceiptEmailSent"] = "Reçu PDF envoyé par e-mail à {0}.",
-        ["Pay_ReceiptEmailSaved"] = "Reçu PDF sauvegardé en .eml ({0}).",
+        ["Pay_ReceiptEmailSaved"] = "SMTP désactivé — reçu PDF enregistré en .eml dans outbox ({0}).",
         ["Pay_ReceiptEmailWarn"] = "Reçu enregistré mais e-mail non envoyé : {0}",
         ["Ussd_WindowTitle"] = "Confirmation Mobile Money",
         ["Ussd_PhoneLabel"] = "NUMÉRO PAYEUR",
@@ -521,7 +521,9 @@ internal static class Strings
         ["Ord_Dlg_SelectedEmail"] = "E-mail du client sélectionné (reçus & suivi)",
         ["Ord_Dlg_SaveEmailBtn"] = "Enregistrer l'e-mail",
         ["Ord_Dlg_EmailSaved"] = "E-mail du client enregistré.",
-        ["Ord_Dlg_PaymentMethod"] = "Mode de paiement (encaissement)"
+        ["Ord_Dlg_PaymentMethod"] = "Mode de paiement (encaissement)",
+        ["Settings_Smtp_OpenOutboxBtn"] = "Ouvrir le dossier .eml (outbox)",
+        ["Settings_Smtp_GmailHint"] = "Astuce Gmail : serveur smtp.gmail.com, port 587, SSL coché et mot de passe d'application Google (16 caractères)."
     };
 
     private static readonly Dictionary<string, string> En = new()
@@ -971,7 +973,7 @@ internal static class Strings
         ["Ord_BillingSummaryPaid"] = "Total: {0}  •  Paid in full ✓",
         ["Ord_ProgressTitle"] = "ORDER PROGRESS",
         ["Ord_StatusEmailSent"] = "Email sent to {0}.",
-        ["Ord_StatusEmailSaved"] = "Email saved locally ({0}).",
+        ["Ord_StatusEmailSaved"] = "SMTP disabled — .eml email saved in outbox ({0}).",
         ["Ord_StatusEmailWarn"] = "Email notification failed: {0}",
         ["Pay_PayerPhone"] = "Payer phone (MTN / Orange)",
         ["Pay_PayerEmail"] = "Payer email (auto PDF receipt)",
@@ -984,7 +986,7 @@ internal static class Strings
         ["Pay_UssdSimConfirmed"] = "Simulated USSD confirmed (ref. {0}). Click Validate to save payment.",
         ["Pay_UssdLiveConfirmed"] = "Phone payment confirmed (ref. {0}). Click Validate to save payment.",
         ["Pay_ReceiptEmailSent"] = "PDF receipt emailed to {0}.",
-        ["Pay_ReceiptEmailSaved"] = "PDF receipt saved as .eml ({0}).",
+        ["Pay_ReceiptEmailSaved"] = "SMTP disabled — PDF receipt saved as .eml in outbox ({0}).",
         ["Pay_ReceiptEmailWarn"] = "Payment saved, but email failed: {0}",
         ["Ussd_WindowTitle"] = "Mobile Money Confirmation",
         ["Ussd_PhoneLabel"] = "PAYER PHONE",
@@ -1028,6 +1030,8 @@ internal static class Strings
         ["Ord_Dlg_SelectedEmail"] = "Selected customer email (receipts & tracking)",
         ["Ord_Dlg_SaveEmailBtn"] = "Save email",
         ["Ord_Dlg_EmailSaved"] = "Customer email saved.",
-        ["Ord_Dlg_PaymentMethod"] = "Payment method (checkout)"
+        ["Ord_Dlg_PaymentMethod"] = "Payment method (checkout)",
+        ["Settings_Smtp_OpenOutboxBtn"] = "Open .eml folder (outbox)",
+        ["Settings_Smtp_GmailHint"] = "Gmail tip: host smtp.gmail.com, port 587, SSL checked, and a 16-character Google App Password."
     };
 }

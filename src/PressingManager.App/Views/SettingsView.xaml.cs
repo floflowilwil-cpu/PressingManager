@@ -147,11 +147,29 @@ public partial class SettingsView : UserControl
         current.Email.UseSsl = ChkSmtpSsl.IsChecked == true;
         current.Email.Username = TxtSmtpUsername.Text.Trim();
         current.Email.Password = TxtSmtpPassword.Password;
-        current.Email.FromAddress = TxtSmtpFromAddress.Text.Trim();
+
+        var from = TxtSmtpFromAddress.Text.Trim();
+        if (string.IsNullOrWhiteSpace(from) && current.Email.Username.Contains('@'))
+        {
+            from = current.Email.Username;
+            TxtSmtpFromAddress.Text = from;
+        }
+
+        current.Email.FromAddress = from;
         current.Email.FromName = TxtSmtpFromName.Text.Trim();
 
         _settingsStore.Save(current);
         return true;
+    }
+
+    private void BtnOpenOutbox_Click(object sender, RoutedEventArgs e)
+    {
+        var outbox = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "PressingManager",
+            "outbox");
+        Directory.CreateDirectory(outbox);
+        Process.Start(new ProcessStartInfo(outbox) { UseShellExecute = true });
     }
 
     private void BtnSaveSmtp_Click(object sender, RoutedEventArgs e)

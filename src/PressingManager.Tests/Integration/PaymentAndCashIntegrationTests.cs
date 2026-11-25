@@ -103,9 +103,10 @@ public sealed class PaymentAndCashIntegrationTests : IDisposable
         var pCash = await _payments.RegisterAsync(new RegisterPaymentDto(order1.Id, 5000m, PaymentMethod.Cash, admin.Id));
         var pMomo = await _payments.RegisterAsync(new RegisterPaymentDto(order1.Id, 3000m, PaymentMethod.OrangeMoney, admin.Id, "OM-SQL-99"));
 
-        // Reference Mobile Money en doublon refusee meme sur une autre commande
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _payments.RegisterAsync(new RegisterPaymentDto(order2.Id, 2000m, PaymentMethod.OrangeMoney, admin.Id, " om-sql-99 ")));
+        // Meme reference Mobile Money autorisee sur une autre commande
+        var pMomo2 = await _payments.RegisterAsync(new RegisterPaymentDto(order2.Id, 2000m, PaymentMethod.OrangeMoney, admin.Id, " om-sql-99 "));
+        Assert.Equal(4000m, await _payments.GetBalanceAsync(order2.Id));
+        Assert.Equal("om-sql-99", pMomo2.Reference);
 
         await _payments.CancelAsync(new CancelPaymentDto(pCash.Id, "Erreur encaissement", admin.Id));
         await _payments.RefundAsync(new CancelPaymentDto(pMomo.Id, "Client annule", admin.Id));

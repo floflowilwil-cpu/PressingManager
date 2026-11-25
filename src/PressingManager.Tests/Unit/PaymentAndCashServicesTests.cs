@@ -66,7 +66,7 @@ public class PaymentAndCashServicesTests
     }
 
     [Fact]
-    public async Task RegisterAsync_RefusesDuplicateMobileMoneyReferenceAcrossDifferentOrders()
+    public async Task RegisterAsync_AllowsSameMobileMoneyReferenceAcrossDifferentOrders()
     {
         var (paymentService, _, _, orders) = CreateSut();
         orders.SetOrder(1, 5000m);
@@ -75,9 +75,10 @@ public class PaymentAndCashServicesTests
         await paymentService.RegisterAsync(
             new RegisterPaymentDto(1, 2000m, PaymentMethod.OrangeMoney, 1, "OM-777"));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            paymentService.RegisterAsync(
-                new RegisterPaymentDto(2, 3000m, PaymentMethod.OrangeMoney, 1, " om-777 ")));
+        await paymentService.RegisterAsync(
+            new RegisterPaymentDto(2, 3000m, PaymentMethod.OrangeMoney, 1, " om-777 "));
+
+        Assert.Equal(2000m, await paymentService.GetBalanceAsync(2));
     }
 
     [Fact]

@@ -84,13 +84,6 @@ public sealed class PaymentService : IPaymentService
             request.Reference,
             openSession is not null);
 
-        if (PaymentRules.RequiresReference(request.Method)
-            && await _paymentRepository.ExistsValidReferenceAsync(request.Reference!, cancellationToken))
-        {
-            throw new InvalidOperationException(
-                $"La reference de transaction '{request.Reference!.Trim()}' existe deja.");
-        }
-
         var userId = _session?.CurrentUser?.Id ?? request.ReceivedByUserId;
         var payment = new Payment
         {
