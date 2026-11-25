@@ -1,3 +1,4 @@
+
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,23 +12,16 @@ namespace PressingManager.App.ViewModels;
 
 public sealed record RoleOption(UserRole Value, string Label);
 
-/// <summary>Une ligne du tableau des utilisateurs (role traduit selon la langue courante).</summary>
 public sealed record UserRow(UserDto Source)
 {
     public int Id => Source.Id;
-
     public string FullName => Source.FullName;
-
     public string Username => Source.Username;
-
     public string RoleText => Loc.Instance.Role(Source.Role);
-
     public bool IsActive => Source.IsActive;
-
     public DateTime? LastLoginLocal => Source.LastLoginLocal;
 }
 
-/// <summary>Onglet Utilisateurs (reserve a l'administrateur : permission ManageUsers).</summary>
 public partial class UserManagementViewModel : ObservableObject
 {
     private readonly IUserService _users;
@@ -35,10 +29,13 @@ public partial class UserManagementViewModel : ObservableObject
 
     private IReadOnlyList<UserDto> _all = Array.Empty<UserDto>();
 
-    public UserManagementViewModel(IUserService users, ICurrentUserContext session)
+    public UserManagementViewModel(
+        IUserService users,
+        ICurrentUserContext session)
     {
         _users = users;
         _session = session;
+
         _roles = BuildRoles();
 
         Loc.Instance.LanguageChanged += OnLanguageChanged;
@@ -46,11 +43,11 @@ public partial class UserManagementViewModel : ObservableObject
 
     public ObservableCollection<UserRow> Users { get; } = new();
 
-    public bool CanManageUsers => _session.HasPermission(Permission.ManageUsers);
+    public bool CanManageUsers =>
+        _session.HasPermission(Permission.ManageUsers);
 
     public bool IsAccessDenied => !CanManageUsers;
 
-    /// <summary>La vue est creee avant la connexion : a rappeler a chaque ouverture de l'onglet pour relire les droits.</summary>
     public void RefreshPermissions()
     {
         OnPropertyChanged(nameof(CanManageUsers));
@@ -79,22 +76,37 @@ public partial class UserManagementViewModel : ObservableObject
     private string _resetPasswordValue = string.Empty;
 
     [ObservableProperty]
+    private string? _recoveryCode;
+
+    [ObservableProperty]
     private string? _message;
 
     [ObservableProperty]
     private bool _isError;
 
+    partial void OnSelectedUserChanged(UserRow? value)
+    {
+        RecoveryCode = null;
+        Message = null;
+    }
+
     [RelayCommand]
-    private Task LoadAsync() => RunAsync(RefreshAsync, successKey: null);
+    private Task LoadAsync() =>
+        RunAsync(RefreshAsync, successKey: null);
 
     [RelayCommand]
     private Task CreateAsync() => RunAsync(async () =>
     {
-        await _users.CreateAsync(new CreateUserDto(NewFullName, NewUsername, NewPassword, NewRole));
+        await _users.CreateAsync(new CreateUserDto(
+            NewFullName,
+            NewUsername,
+            NewPassword,
+            NewRole));
 
         NewFullName = string.Empty;
         NewUsername = string.Empty;
         NewPassword = string.Empty;
+
         await RefreshAsync();
     }, "Users_Created");
 
@@ -102,7 +114,9 @@ public partial class UserManagementViewModel : ObservableObject
     private Task ToggleActiveAsync() => RunAsync(async () =>
     {
         var user = RequireSelection();
+
         await _users.SetActiveAsync(user.Id, !user.IsActive);
+
         await RefreshAsync(user.Id);
     }, "Users_StatusUpdated");
 
@@ -110,25 +124,36 @@ public partial class UserManagementViewModel : ObservableObject
     private Task ResetPasswordAsync() => RunAsync(async () =>
     {
         var user = RequireSelection();
-        await _users.ResetPasswordAsync(user.Id, ResetPasswordValue);
+
+        await _users.ResetPasswordAsync(
+            user.Id,
+            ResetPasswordValue);
+
         ResetPasswordValue = string.Empty;
     }, "Users_PasswordReset");
 
-    /// <summary>Le code n'est retourne qu'une fois par le service : on l'affiche ici, il ne sera pas conserve.</summary>
     [RelayCommand]
     private Task GenerateRecoveryCodeAsync() => RunAsync(async () =>
     {
         var user = RequireSelection();
-        var code = await _users.GenerateRecoveryCodeAsync(user.Id);
 
-        Message = Loc.Instance.Format("Users_RecoveryShown", user.FullName, code);
+        RecoveryCode =
+            await _users.GenerateRecoveryCodeAsync(user.Id);
+
+        Message = Loc.Instance.Format(
+            "Users_RecoveryShown",
+            user.FullName,
+            RecoveryCode);
+
         IsError = false;
-    }, successKey: null, keepMessage: true);
+    }, successKey: null);
 
     private UserRow RequireSelection() =>
-        SelectedUser ?? throw new BusinessRuleException(Loc.Instance["Users_SelectFirst"]);
+        SelectedUser ?? throw new BusinessRuleException(
+            Loc.Instance["Users_SelectFirst"]);
 
-    private async Task RefreshAsync() => await RefreshAsync(SelectedUser?.Id);
+    private async Task RefreshAsync() =>
+        await RefreshAsync(SelectedUser?.Id);
 
     private async Task RefreshAsync(int? keepSelectionId)
     {
@@ -139,25 +164,36 @@ public partial class UserManagementViewModel : ObservableObject
     private void RebuildRows(int? keepSelectionId)
     {
         Users.Clear();
+
         foreach (var user in _all)
         {
             Users.Add(new UserRow(user));
         }
 
-        SelectedUser = Users.FirstOrDefault(u => u.Id == keepSelectionId);
+        SelectedUser = Users.FirstOrDefault(
+            user => user.Id == keepSelectionId);
     }
 
     private static List<RoleOption> BuildRoles() =>
-        Enum.GetValues<UserRole>().Select(role => new RoleOption(role, Loc.Instance.Role(role))).ToList();
+        Enum.GetValues<UserRole>()
+            .Select(role => new RoleOption(
+                role,
+                Loc.Instance.Role(role)))
+            .ToList();
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         Roles = BuildRoles();
-        OnPropertyChanged(nameof(NewRole)); // le ComboBox re-selectionne le role en cours
+
+        OnPropertyChanged(nameof(NewRole));
+
         RebuildRows(SelectedUser?.Id);
     }
 
-    private async Task RunAsync(Func<Task> action, string? successKey, bool keepMessage = false)
+    private async Task RunAsync(
+        Func<Task> action,
+        string? successKey,
+        bool keepMessage = false)
     {
         if (!keepMessage)
         {
@@ -174,7 +210,10 @@ public partial class UserManagementViewModel : ObservableObject
                 Message = Loc.Instance[successKey];
             }
         }
-        catch (Exception ex) when (ex is BusinessRuleException or PermissionDeniedException)
+        catch (Exception ex) when (
+            ex is BusinessRuleException or
+            PermissionDeniedException or
+            InvalidOperationException)
         {
             IsError = true;
             Message = ex.Message;

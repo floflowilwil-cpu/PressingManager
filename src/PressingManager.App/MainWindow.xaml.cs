@@ -3,7 +3,6 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Data;
 using PressingManager.App.Localization;
 using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
@@ -35,17 +34,13 @@ namespace PressingManager.App
             };
         }
 
-        // CONNEXION REUSSIE
         private void OnLoginSucceeded(object? sender, EventArgs e)
         {
             Application.Current.MainWindow = _dashboardWindow;
-
             _dashboardWindow.Show();
-
             Close();
         }
 
-        // BOUTON DE CONNEXION
         private async void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.Username = txtUsername.Text.Trim();
@@ -63,7 +58,6 @@ namespace PressingManager.App
             await _viewModel.SubmitCommand.ExecuteAsync(null);
         }
 
-        // MOT DE PASSE : SYNCHRONISATION
         private void TxtPassword_PasswordChanged(
             object sender,
             RoutedEventArgs e)
@@ -79,7 +73,6 @@ namespace PressingManager.App
             _viewModel.Password = txtPasswordVisible.Text;
         }
 
-        // AFFICHER / MASQUER LE MOT DE PASSE
         private void BtnTogglePassword_Click(
             object sender,
             RoutedEventArgs e)
@@ -112,7 +105,6 @@ namespace PressingManager.App
             }
         }
 
-        // CONFIRMATION DU MOT DE PASSE : SYNCHRONISATION
         private void TxtConfirmPassword_PasswordChanged(
             object sender,
             RoutedEventArgs e)
@@ -124,23 +116,17 @@ namespace PressingManager.App
             object sender,
             TextChangedEventArgs e)
         {
-            txtConfirmPassword.Password =
-                txtConfirmPasswordVisible.Text;
-
-            _viewModel.ConfirmPassword =
-                txtConfirmPasswordVisible.Text;
+            txtConfirmPassword.Password = txtConfirmPasswordVisible.Text;
+            _viewModel.ConfirmPassword = txtConfirmPasswordVisible.Text;
         }
 
-        // AFFICHER / MASQUER LA CONFIRMATION
         private void BtnToggleConfirmPassword_Click(
             object sender,
             RoutedEventArgs e)
         {
-            if (txtConfirmPasswordVisible.Visibility ==
-                Visibility.Collapsed)
+            if (txtConfirmPasswordVisible.Visibility == Visibility.Collapsed)
             {
-                txtConfirmPasswordVisible.Text =
-                    txtConfirmPassword.Password;
+                txtConfirmPasswordVisible.Text = txtConfirmPassword.Password;
 
                 txtConfirmPassword.Visibility = Visibility.Collapsed;
                 txtConfirmPasswordVisible.Visibility = Visibility.Visible;
@@ -155,12 +141,9 @@ namespace PressingManager.App
             }
             else
             {
-                txtConfirmPassword.Password =
-                    txtConfirmPasswordVisible.Text;
+                txtConfirmPassword.Password = txtConfirmPasswordVisible.Text;
 
-                txtConfirmPasswordVisible.Visibility =
-                    Visibility.Collapsed;
-
+                txtConfirmPasswordVisible.Visibility = Visibility.Collapsed;
                 txtConfirmPassword.Visibility = Visibility.Visible;
 
                 btnToggleConfirmPassword.Content = "\uE890";
@@ -171,7 +154,6 @@ namespace PressingManager.App
             }
         }
 
-        // LANGUES : les textes se mettent a jour tout seuls (voir Localization/Loc.cs)
         private void BtnFrench_Click(object sender, RoutedEventArgs e)
         {
             Loc.Instance.SetLanguage(AppLanguage.Fr);
@@ -186,15 +168,25 @@ namespace PressingManager.App
 
         private void UpdateLanguageButtons()
         {
-            var selectedBackground = new SolidColorBrush(Color.FromRgb(8, 100, 217));
-            var idleForeground = new SolidColorBrush(Color.FromRgb(23, 74, 145));
+            var selectedBackground =
+                new SolidColorBrush(Color.FromRgb(8, 100, 217));
+
+            var idleForeground =
+                new SolidColorBrush(Color.FromRgb(23, 74, 145));
+
             var english = Loc.Instance.IsEnglish;
 
-            btnFrench.Background = english ? Brushes.Transparent : selectedBackground;
-            btnFrench.Foreground = english ? idleForeground : Brushes.White;
+            btnFrench.Background =
+                english ? Brushes.Transparent : selectedBackground;
 
-            btnEnglish.Background = english ? selectedBackground : Brushes.Transparent;
-            btnEnglish.Foreground = english ? Brushes.White : idleForeground;
+            btnFrench.Foreground =
+                english ? idleForeground : Brushes.White;
+
+            btnEnglish.Background =
+                english ? selectedBackground : Brushes.Transparent;
+
+            btnEnglish.Foreground =
+                english ? Brushes.White : idleForeground;
         }
     }
 }

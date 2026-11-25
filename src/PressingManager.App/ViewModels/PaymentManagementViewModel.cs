@@ -420,6 +420,11 @@ public partial class PaymentManagementViewModel : ObservableObject
         }
     }
 
+    public void RefreshLanguage()
+{
+    OnLanguageChanged(this, EventArgs.Empty);
+}
+
     private async Task RefreshExpensesAsync()
     {
         var now = DateTime.UtcNow;
