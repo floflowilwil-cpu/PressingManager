@@ -4,24 +4,27 @@
              xmlns:loc="clr-namespace:PressingManager.App.Localization"
              Background="#F3F6FB">
     <UserControl.Resources>
+        <!-- Pressing Manager / Personne 3 : theme visuel renforce -->
+        <SolidColorBrush x:Key="UiNavy" Color="#142B45" />
+        <SolidColorBrush x:Key="UiTeal" Color="#0F9F9A" />
+        <SolidColorBrush x:Key="UiLine" Color="#DCE6EF" />
+        <SolidColorBrush x:Key="UiMuted" Color="#64748B" />
+
+
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="Margin" Value="0,10,0,4" />
-            <Setter Property="Foreground" Value="#12365D" />
+            <Setter Property="Margin" Value="0,12,0,5" />
+            <Setter Property="Foreground" Value="#718096" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Padding" Value="12,8" />
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
             <Setter Property="Margin" Value="0,12,0,0" />
-            <Setter Property="Background" Value="#0864D9" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
         </Style>
-
-        <!-- Produit au niveau d'alerte : ligne en rouge -->
-        <Style x:Key="ProductRowStyle" TargetType="DataGridRow">
+<!-- Produit au niveau d'alerte : ligne en rouge -->
+        <Style x:Key="ProductRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsBelowAlertThreshold}" Value="True">
                     <Setter Property="Foreground" Value="#C0392B" />
@@ -73,7 +76,7 @@
                     <RowDefinition Height="190" />
                 </Grid.RowDefinitions>
 
-                <Border Background="White" CornerRadius="10" Padding="12">
+                <Border Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12" Padding="16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -103,7 +106,7 @@
                                   RowStyle="{StaticResource ProductRowStyle}"
                                   AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
                                   HeadersVisibility="Column" GridLinesVisibility="Horizontal" CanUserAddRows="False"
-                                  BorderThickness="0" Background="White" RowHeight="34">
+                                  BorderThickness="0" Background="White" RowHeight="42">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{loc:T Stock_ColProduct}" Binding="{Binding Name}" Width="*" />
                                 <DataGridTextColumn Header="{loc:T Stock_ColUnit}" Binding="{Binding Unit}" Width="90" />
@@ -118,10 +121,10 @@
                 <TextBlock Grid.Row="1" Text="{loc:T Stock_Movements}" FontWeight="Bold" Foreground="#08A6B5"
                            Margin="2,14,0,6" />
 
-                <Border Grid.Row="2" Background="White" CornerRadius="10" Padding="12">
+                <Border Grid.Row="2" Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12" Padding="16">
                     <DataGrid ItemsSource="{Binding Movements}" AutoGenerateColumns="False" IsReadOnly="True"
                               SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-                              CanUserAddRows="False" BorderThickness="0" Background="White" RowHeight="30">
+                              CanUserAddRows="False" BorderThickness="0" Background="White" RowHeight="38">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{loc:T Stock_ColDate}"
                                                 Binding="{Binding DateLocal, StringFormat='dd/MM/yyyy HH:mm'}" Width="140" />
@@ -135,7 +138,7 @@
             </Grid>
 
             <!-- DROITE : formulaires (masques sans la permission ManageStock) -->
-            <Border Grid.Row="1" Grid.Column="1" Padding="16" Background="White" CornerRadius="10">
+            <Border Grid.Row="1" Grid.Column="1" Padding="18" Background="White" BorderBrush="#E8EEF5" BorderThickness="1" CornerRadius="12">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="{loc:T Stock_ReadOnly}" TextWrapping="Wrap" Foreground="#64748B">
@@ -155,13 +158,13 @@
                             <TextBlock Text="{loc:T Stock_NewProduct}" FontWeight="Bold" Foreground="#08A6B5" />
 
                             <TextBlock Text="{loc:T Stock_Name}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                            <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" />
 
                             <TextBlock Text="{loc:T Stock_UnitLabel}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding NewUnit, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                            <TextBox Text="{Binding NewUnit, UpdateSourceTrigger=PropertyChanged}" />
 
                             <TextBlock Text="{loc:T Stock_Threshold}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding NewThresholdText, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                            <TextBox Text="{Binding NewThresholdText, UpdateSourceTrigger=PropertyChanged}" />
 
                             <Button Content="{loc:T Stock_CreateProduct}" Command="{Binding CreateProductCommand}"
                                     Style="{StaticResource PrimaryButton}" />
@@ -171,13 +174,13 @@
                             <TextBlock Text="{loc:T Stock_SelectedProduct}" FontWeight="Bold" Foreground="#08A6B5" />
 
                             <TextBlock Text="{loc:T Stock_Name}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                            <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" />
 
                             <TextBlock Text="{loc:T Stock_UnitLabel}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding EditUnit, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                            <TextBox Text="{Binding EditUnit, UpdateSourceTrigger=PropertyChanged}" />
 
                             <TextBlock Text="{loc:T Stock_Threshold}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding EditThresholdText, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                            <TextBox Text="{Binding EditThresholdText, UpdateSourceTrigger=PropertyChanged}" />
 
                             <Button Content="{loc:T Stock_SaveProduct}" Command="{Binding UpdateProductCommand}"
                                     Style="{StaticResource PrimaryButton}" />
@@ -189,13 +192,13 @@
                             <TextBlock Text="{loc:T Stock_MoveType}" Style="{StaticResource FieldLabel}" />
                             <ComboBox ItemsSource="{Binding MovementTypes}" DisplayMemberPath="Label"
                                       SelectedValuePath="Value" SelectedValue="{Binding SelectedMovementType}"
-                                      Padding="6" />
+                                      />
 
                             <TextBlock Text="{loc:T Stock_Quantity}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding QuantityText, UpdateSourceTrigger=PropertyChanged}" Padding="6" />
+                            <TextBox Text="{Binding QuantityText, UpdateSourceTrigger=PropertyChanged}" />
 
                             <TextBlock Text="{loc:T Stock_Reason}" Style="{StaticResource FieldLabel}" />
-                            <TextBox Text="{Binding ReasonText, UpdateSourceTrigger=PropertyChanged}" Padding="6"
+                            <TextBox Text="{Binding ReasonText, UpdateSourceTrigger=PropertyChanged}"
                                      TextWrapping="Wrap" />
 
                             <Button Content="{loc:T Stock_Record}" Command="{Binding RecordMovementCommand}"
