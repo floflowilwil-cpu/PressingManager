@@ -65,7 +65,7 @@
         <!-- CARTE D'INDICATEUR (meme modele que les cartes de Statistiques) -->
         <Style x:Key="KpiCard" TargetType="Border">
             <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Padding" Value="20,18" />
+            <Setter Property="Padding" Value="18,16" />
             <Setter Property="Margin" Value="0,0,14,0" />
         </Style>
 
@@ -81,13 +81,31 @@
     </Window.Resources>
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="54" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="256" />
+            <ColumnDefinition x:Name="SidebarColumn" Width="0" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
+        <!-- Barre superieure : le menu est accessible a la demande -->
+        <Border Grid.Row="0" Grid.Column="1" Background="White" Padding="16,6"
+                BorderBrush="#E5EAF1" BorderThickness="0,0,0,1">
+            <DockPanel LastChildFill="True">
+                <Button x:Name="BtnToggleMenu" DockPanel.Dock="Left" Content="☰"
+                        Width="42" Height="38" FontSize="21" Foreground="#0F2A4A"
+                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                        ToolTip="Ouvrir ou fermer le menu" Click="BtnToggleMenu_Click" />
+                <TextBlock Text="Tableau de bord" VerticalAlignment="Center"
+                           FontSize="16" FontWeight="SemiBold" Foreground="#0F2A4A" Margin="12,0,0,0" />
+            </DockPanel>
+        </Border>
+
         <!-- ===================== MENU LATERAL ===================== -->
-        <Border Grid.Column="0">
+        <Border x:Name="SidebarHost" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"
+                Visibility="Collapsed">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#0F2A4A" Offset="0" />
@@ -179,7 +197,7 @@
         </Border>
 
         <!-- ===================== ACCUEIL (TABLEAU DE BORD) ===================== -->
-        <ScrollViewer x:Name="HomeHost" Grid.Column="1" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="HomeHost" Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="32">
 
@@ -340,14 +358,14 @@
         </ScrollViewer>
 
         <!-- ===================== MODULES (une zone pleine page par onglet : plus de defilement imbrique) ===================== -->
-        <ContentControl x:Name="CustomersHost" Grid.Column="1" Visibility="Collapsed" />
-        <ContentControl x:Name="OrdersHost" Grid.Column="1" Visibility="Collapsed" />
-        <ContentControl x:Name="ServicesHost" Grid.Column="1" Visibility="Collapsed" />
-        <ContentControl x:Name="StockHost" Grid.Column="1" Visibility="Collapsed" />
-        <ContentControl x:Name="PaymentsHost" Grid.Column="1" Visibility="Collapsed" />
-        <ContentControl x:Name="StatisticsHost" Grid.Column="1" Visibility="Collapsed" />
-        <ContentControl x:Name="UsersHost" Grid.Column="1" Visibility="Collapsed" />
-        <ContentControl x:Name="SettingsHost" Grid.Column="1" Visibility="Collapsed" />
+        <ContentControl x:Name="CustomersHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
+        <ContentControl x:Name="OrdersHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
+        <ContentControl x:Name="ServicesHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
+        <ContentControl x:Name="StockHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
+        <ContentControl x:Name="PaymentsHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
+        <ContentControl x:Name="StatisticsHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
+        <ContentControl x:Name="UsersHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
+        <ContentControl x:Name="SettingsHost" Grid.Column="1" Grid.Row="1" Visibility="Collapsed" />
 
     </Grid>
 </Window>
