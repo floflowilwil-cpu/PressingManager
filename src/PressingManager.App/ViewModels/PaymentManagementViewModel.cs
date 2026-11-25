@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PressingManager.App.Localization;
 using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
@@ -35,6 +36,8 @@ public partial class PaymentManagementViewModel : ObservableObject
     private readonly IOrderBillingInfoProvider _orderBilling;
     private readonly ICurrentUserContext _session;
 
+    private IReadOnlyList<PaymentDto> _loadedPayments = Array.Empty<PaymentDto>();
+
     public PaymentManagementViewModel(
         IPaymentService payments,
         ICashService cash,
@@ -47,15 +50,17 @@ public partial class PaymentManagementViewModel : ObservableObject
         _expenses = expenses ?? throw new ArgumentNullException(nameof(expenses));
         _orderBilling = orderBilling ?? throw new ArgumentNullException(nameof(orderBilling));
         _session = session ?? throw new ArgumentNullException(nameof(session));
+
+        _expenseMethods = BuildExpenseMethods();
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
     }
 
     public ObservableCollection<PaymentHistoryItem> OrderPayments { get; } = new();
 
     public ObservableCollection<ExpenseDto> RecentExpenses { get; } = new();
 
-    public IReadOnlyList<PaymentMethodOption> ExpenseMethods { get; } = Enum.GetValues<PaymentMethod>()
-        .Select(m => new PaymentMethodOption(m, PaymentReceiptGenerator.GetMethodLabel(m)))
-        .ToList();
+    [ObservableProperty]
+    private IReadOnlyList<PaymentMethodOption> _expenseMethods;
 
     [ObservableProperty]
     private string _orderIdText = string.Empty;
@@ -150,14 +155,21 @@ public partial class PaymentManagementViewModel : ObservableObject
     public bool IsCashSessionOpen => CurrentCashSession is { Status: CashSessionStatus.Open };
 
     public string CashStatusLabel => IsCashSessionOpen
-        ? $"Caisse ouverte (#{CurrentCashSession!.Id}) • Fonds initial : {CurrentCashSession.OpeningAmount:N2}"
-        : "Caisse fermée — ouvrez une session pour encaisser en espèces";
+        ? Loc.Instance.Format(
+            "Pay_CashOpenStatus",
+            CurrentCashSession!.Id,
+            CurrentCashSession.OpeningAmount.ToString("N2", Loc.Instance.Culture))
+        : Loc.Instance["Pay_CashClosedStatus"];
 
     public bool HasLatestReceipt => LatestReceipt is not null;
 
     public string LatestReceiptSummary => LatestReceipt is null
         ? string.Empty
-        : $"{LatestReceipt.ReceiptNumber} • {LatestReceipt.AmountPaid:N2} via {LatestReceipt.MethodLabel}";
+        : Loc.Instance.Format(
+            "Pay_LatestReceiptSummary",
+            LatestReceipt.ReceiptNumber,
+            LatestReceipt.AmountPaid.ToString("N2", Loc.Instance.Culture),
+            Loc.Instance.PaymentMethod(LatestReceipt.Method));
 
     /// <summary>Declenche l'ouverture de la fenetre de confirmation et d'impression du recu.</summary>
     public event EventHandler<PaymentReceiptDto>? ReceiptReady;
@@ -170,27 +182,27 @@ public partial class PaymentManagementViewModel : ObservableObject
     {
         CurrentCashSession = await _cash.GetCurrentAsync();
         await RefreshExpensesAsync();
-    }, successMessage: null);
+    }, successKey: null);
 
     [RelayCommand]
     private Task LoadOrderAsync() => RunAsync(async () =>
     {
         if (!int.TryParse(OrderIdText.Trim(), out var orderId) || orderId <= 0)
         {
-            throw new InvalidOperationException("Saisissez un identifiant de commande valide (nombre positif).");
+            throw new InvalidOperationException(Loc.Instance["Pay_Err_InvalidOrderId"]);
         }
 
         await RefreshOrderAsync(orderId);
         PaymentAmountText = RemainingBalance > 0m
             ? RemainingBalance.ToString("0.##", CultureInfo.CurrentCulture)
             : string.Empty;
-    }, successMessage: null);
+    }, successKey: null);
 
     [RelayCommand]
     private Task RegisterPaymentAsync() => RunAsync(async () =>
     {
         var orderId = RequireLoadedOrderId();
-        var amount = ParsePositiveAmount(PaymentAmountText, "montant du paiement");
+        var amount = ParsePositiveAmount(PaymentAmountText, "Pay_Field_PaymentAmount");
         var userId = _session.CurrentUser?.Id ?? 0;
 
         var created = await _payments.RegisterAsync(new RegisterPaymentDto(
@@ -210,7 +222,7 @@ public partial class PaymentManagementViewModel : ObservableObject
         var receipt = BuildReceiptFromDto(created);
         LatestReceipt = receipt;
         ReceiptReady?.Invoke(this, receipt);
-    }, "Paiement validé et reçu généré avec succès.");
+    }, "Pay_Msg_PaymentSaved");
 
     [RelayCommand]
     private void OpenLatestReceipt()
@@ -227,14 +239,14 @@ public partial class PaymentManagementViewModel : ObservableObject
         if (SelectedPayment is null)
         {
             IsError = true;
-            Message = "Sélectionnez un paiement valide dans l'historique.";
+            Message = Loc.Instance["Pay_Err_SelectValidPayment"];
             return;
         }
 
         if (!SelectedPayment.IsValid)
         {
             IsError = true;
-            Message = "Un reçu officiel ne peut être généré que pour un paiement validé.";
+            Message = Loc.Instance["Pay_Err_ReceiptOnlyForValid"];
             return;
         }
 
@@ -266,7 +278,7 @@ public partial class PaymentManagementViewModel : ObservableObject
         await _payments.CancelAsync(new CancelPaymentDto(payment.Id, CancelReason, userId));
         CancelReason = string.Empty;
         await RefreshOrderAsync(payment.OrderId);
-    }, "Paiement annulé.");
+    }, "Pay_Msg_PaymentCancelled");
 
     [RelayCommand]
     private Task RefundSelectedPaymentAsync() => RunAsync(async () =>
@@ -277,25 +289,25 @@ public partial class PaymentManagementViewModel : ObservableObject
         await _payments.RefundAsync(new CancelPaymentDto(payment.Id, CancelReason, userId));
         CancelReason = string.Empty;
         await RefreshOrderAsync(payment.OrderId);
-    }, "Paiement remboursé.");
+    }, "Pay_Msg_PaymentRefunded");
 
     [RelayCommand]
     private Task OpenCashSessionAsync() => RunAsync(async () =>
     {
-        var openingAmount = ParseNonNegativeAmount(OpeningAmountText, "fonds d'ouverture");
+        var openingAmount = ParseNonNegativeAmount(OpeningAmountText, "Pay_Field_OpeningAmount");
         var userId = _session.CurrentUser?.Id ?? 0;
         CurrentCashSession = await _cash.OpenAsync(new OpenCashSessionDto(openingAmount, userId));
-    }, "Session de caisse ouverte.");
+    }, "Pay_Msg_CashOpened");
 
     [RelayCommand]
     private Task CloseCashSessionAsync() => RunAsync(async () =>
     {
         if (CurrentCashSession is null || CurrentCashSession.Status != CashSessionStatus.Open)
         {
-            throw new InvalidOperationException("Aucune session de caisse ouverte à clôturer.");
+            throw new InvalidOperationException(Loc.Instance["Pay_Err_NoOpenCash"]);
         }
 
-        var counted = ParseNonNegativeAmount(CountedAmountText, "montant compté");
+        var counted = ParseNonNegativeAmount(CountedAmountText, "Pay_Field_CountedAmount");
         var userId = _session.CurrentUser?.Id ?? 0;
 
         var closed = await _cash.CloseAsync(new CloseCashSessionDto(
@@ -307,13 +319,16 @@ public partial class PaymentManagementViewModel : ObservableObject
         CurrentCashSession = null;
         CountedAmountText = string.Empty;
         CloseComment = string.Empty;
-        Message = $"Caisse clôturée — Attendu : {closed.ExpectedAmount:N2}, Écart : {closed.Discrepancy:N2}.";
-    }, successMessage: null);
+        Message = Loc.Instance.Format(
+            "Pay_Msg_CashClosed",
+            (closed.ExpectedAmount ?? 0m).ToString("N2", Loc.Instance.Culture),
+            (closed.Discrepancy ?? 0m).ToString("N2", Loc.Instance.Culture));
+    }, successKey: null);
 
     [RelayCommand]
     private Task CreateExpenseAsync() => RunAsync(async () =>
     {
-        var amount = ParsePositiveAmount(ExpenseAmountText, "montant de la dépense");
+        var amount = ParsePositiveAmount(ExpenseAmountText, "Pay_Field_ExpenseAmount");
         var userId = _session.CurrentUser?.Id ?? 0;
 
         await _expenses.CreateAsync(new CreateExpenseDto(
@@ -328,7 +343,7 @@ public partial class PaymentManagementViewModel : ObservableObject
         ExpenseAmountText = string.Empty;
         ExpenseComment = string.Empty;
         await RefreshExpensesAsync();
-    }, "Dépense enregistrée.");
+    }, "Pay_Msg_ExpenseSaved");
 
     private PaymentReceiptDto BuildReceiptFromDto(PaymentDto payment)
     {
@@ -336,7 +351,7 @@ public partial class PaymentManagementViewModel : ObservableObject
             .Where(p => p.IsValid)
             .Sum(p => p.Amount);
 
-        var cashierName = _session.CurrentUser?.FullName ?? "Caissier";
+        var cashierName = _session.CurrentUser?.FullName ?? Loc.Instance["Pay_DefaultCashier"];
         return PaymentReceiptGenerator.BuildReceipt(
             payment,
             OrderNumber,
@@ -349,20 +364,25 @@ public partial class PaymentManagementViewModel : ObservableObject
     private async Task RefreshOrderAsync(int orderId)
     {
         var order = await _orderBilling.GetOrderBillingInfoAsync(orderId)
-            ?? throw new InvalidOperationException($"Commande #{orderId} introuvable.");
+            ?? throw new InvalidOperationException(Loc.Instance.Format("Pay_Err_OrderNotFound", orderId));
 
-        var payments = await _payments.GetByOrderAsync(orderId);
+        _loadedPayments = await _payments.GetByOrderAsync(orderId);
         var balance = await _payments.GetBalanceAsync(orderId);
 
         LoadedOrderId = order.OrderId;
         OrderNumber = string.IsNullOrWhiteSpace(order.OrderNumber) ? $"CMD-{order.OrderId:D4}" : order.OrderNumber;
-        CustomerName = string.IsNullOrWhiteSpace(order.CustomerName) ? "Client" : order.CustomerName;
+        CustomerName = string.IsNullOrWhiteSpace(order.CustomerName) ? Loc.Instance["Pay_DefaultCustomer"] : order.CustomerName;
         OrderTotal = order.TotalAmount;
         RemainingBalance = balance;
         IsOrderLoaded = true;
 
+        RebuildPaymentRows(SelectedPayment?.Id);
+    }
+
+    private void RebuildPaymentRows(int? keepSelectionId)
+    {
         OrderPayments.Clear();
-        foreach (var p in payments)
+        foreach (var p in _loadedPayments)
         {
             OrderPayments.Add(new PaymentHistoryItem(
                 p.Id,
@@ -371,11 +391,32 @@ public partial class PaymentManagementViewModel : ObservableObject
                 p.PaidAt,
                 p.PaidAt.ToLocalTime(),
                 p.Method,
-                PaymentReceiptGenerator.GetMethodLabel(p.Method),
+                Loc.Instance.PaymentMethod(p.Method),
                 p.Reference,
                 p.Status,
-                PaymentReceiptGenerator.GetStatusLabel(p.Status),
+                Loc.Instance.PaymentStatus(p.Status),
                 p.CancelReason));
+        }
+
+        SelectedPayment = OrderPayments.FirstOrDefault(p => p.Id == keepSelectionId);
+    }
+
+    private static List<PaymentMethodOption> BuildExpenseMethods() =>
+        Enum.GetValues<PaymentMethod>()
+            .Select(m => new PaymentMethodOption(m, Loc.Instance.PaymentMethod(m)))
+            .ToList();
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        ExpenseMethods = BuildExpenseMethods();
+        OnPropertyChanged(nameof(ExpenseMethod));
+        OnPropertyChanged(nameof(CashStatusLabel));
+        OnPropertyChanged(nameof(LatestReceiptSummary));
+        RebuildPaymentRows(SelectedPayment?.Id);
+
+        if (IsOrderLoaded && CustomerName is "Client" or "Customer")
+        {
+            CustomerName = Loc.Instance["Pay_DefaultCustomer"];
         }
     }
 
@@ -391,34 +432,34 @@ public partial class PaymentManagementViewModel : ObservableObject
     }
 
     private int RequireLoadedOrderId() =>
-        LoadedOrderId ?? throw new InvalidOperationException("Chargez d'abord une commande avant d'enregistrer un paiement.");
+        LoadedOrderId ?? throw new InvalidOperationException(Loc.Instance["Pay_Err_LoadOrderFirst"]);
 
     private PaymentHistoryItem RequireSelectedPayment() =>
-        SelectedPayment ?? throw new InvalidOperationException("Sélectionnez d'abord un paiement dans la liste.");
+        SelectedPayment ?? throw new InvalidOperationException(Loc.Instance["Pay_Err_SelectPaymentFirst"]);
 
-    private static decimal ParsePositiveAmount(string text, string fieldName)
+    private static decimal ParsePositiveAmount(string text, string fieldKey)
     {
-        var value = ParseNonNegativeAmount(text, fieldName);
+        var value = ParseNonNegativeAmount(text, fieldKey);
         if (value <= 0m)
         {
-            throw new InvalidOperationException($"Le {fieldName} doit être strictement supérieur à zéro.");
+            throw new InvalidOperationException(Loc.Instance.Format("Pay_Err_PositiveAmount", Loc.Instance[fieldKey]));
         }
 
         return value;
     }
 
-    private static decimal ParseNonNegativeAmount(string text, string fieldName)
+    private static decimal ParseNonNegativeAmount(string text, string fieldKey)
     {
         var normalized = (text ?? string.Empty).Trim().Replace(',', '.');
         if (!decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var value) || value < 0m)
         {
-            throw new InvalidOperationException($"Saisissez un {fieldName} valide.");
+            throw new InvalidOperationException(Loc.Instance.Format("Pay_Err_ValidAmount", Loc.Instance[fieldKey]));
         }
 
         return value;
     }
 
-    private async Task RunAsync(Func<Task> action, string? successMessage)
+    private async Task RunAsync(Func<Task> action, string? successKey)
     {
         if (IsBusy)
         {
@@ -430,9 +471,9 @@ public partial class PaymentManagementViewModel : ObservableObject
         {
             await action();
             IsError = false;
-            if (successMessage is not null)
+            if (successKey is not null)
             {
-                Message = successMessage;
+                Message = Loc.Instance[successKey];
             }
         }
         catch (Exception ex) when (ex is BusinessRuleException or PermissionDeniedException or InvalidOperationException)

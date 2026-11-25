@@ -1,14 +1,13 @@
-
 using System;
 using System.IO;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PressingManager.Core.Interfaces;
 using PressingManager.App.Localization;
 using PressingManager.App.ViewModels;
 using PressingManager.App.Views;
+using PressingManager.Core.Interfaces;
 using PressingManager.Infrastructure;
 using PressingManager.Infrastructure.Data;
 using PressingManager.Infrastructure.Data.Seed;
@@ -37,12 +36,22 @@ public partial class App : Application
                 .AddEnvironmentVariables()
                 .Build();
 
-            string? connectionString = configuration.GetConnectionString("Pressing");
-            if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("CHANGE_ME", StringComparison.Ordinal))
+            string? configuredConnection = configuration.GetConnectionString("Pressing");
+            bool hasPostgresConnection = !string.IsNullOrWhiteSpace(configuredConnection)
+                && !configuredConnection.Contains("CHANGE_ME", StringComparison.Ordinal);
+
+            string connectionString;
+            if (hasPostgresConnection)
             {
-                throw new InvalidOperationException(
-                    "Chaîne de connexion PostgreSQL manquante. Copiez appsettings.local.json.example en " +
-                    "appsettings.local.json et renseignez ConnectionStrings:Pressing (voir docs/README-postgresql.md).");
+                connectionString = configuredConnection!;
+            }
+            else
+            {
+                string appDataPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "PressingManager");
+                Directory.CreateDirectory(appDataPath);
+                connectionString = $"Data Source={Path.Combine(appDataPath, "pressingmanager-local.db")}";
             }
 
             var services = new ServiceCollection();
@@ -68,7 +77,14 @@ public partial class App : Application
 
             using (var db = _serviceProvider.GetRequiredService<IDbContextFactory<PressingDbContext>>().CreateDbContext())
             {
-                db.Database.Migrate();
+                if (hasPostgresConnection)
+                {
+                    db.Database.Migrate();
+                }
+                else
+                {
+                    db.Database.EnsureCreated();
+                }
 
                 // Comptes de depart de l'equipe (idempotent). Mettre SeedDemoUsers a false pour les desactiver.
                 bool seedUsers = !bool.TryParse(configuration["SeedDemoUsers"], out var flag) || flag;
