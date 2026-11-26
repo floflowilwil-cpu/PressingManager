@@ -24,6 +24,7 @@ public sealed class SmtpEmailNotificationService : IEmailNotificationService
 
     private readonly IIntegrationSettingsStore _settingsStore;
     private readonly string _outboxDirectory;
+    private readonly Func<DateTime> _localNowProvider;
 
     [ActivatorUtilitiesConstructor]
     public SmtpEmailNotificationService(IIntegrationSettingsStore settingsStore)
@@ -31,11 +32,32 @@ public sealed class SmtpEmailNotificationService : IEmailNotificationService
     {
     }
 
-    public SmtpEmailNotificationService(IIntegrationSettingsStore settingsStore, string outboxDirectory)
+    public SmtpEmailNotificationService(
+        IIntegrationSettingsStore settingsStore,
+        string outboxDirectory,
+        Func<DateTime>? localNowProvider = null)
     {
         _settingsStore = settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
         ArgumentException.ThrowIfNullOrWhiteSpace(outboxDirectory);
         _outboxDirectory = outboxDirectory;
+        _localNowProvider = localNowProvider ?? (static () => DateTime.Now);
+    }
+
+    public static string GetGreeting(bool isEnglish, DateTime localTime, string? customerName = null)
+    {
+        var salutation = isEnglish
+            ? localTime.Hour switch
+            {
+                >= 5 and < 12 => "Good morning",
+                >= 12 and < 18 => "Good afternoon",
+                _ => "Good evening"
+            }
+            : (localTime.Hour is >= 5 and < 18 ? "Bonjour" : "Bonsoir");
+
+        var cleanName = (customerName ?? string.Empty).Trim();
+        return cleanName.Length > 0
+            ? $"{salutation} {Encode(cleanName)},"
+            : $"{salutation},";
     }
 
     public async Task<EmailDeliveryResult> SendPaymentReceiptAsync(
@@ -66,9 +88,7 @@ public sealed class SmtpEmailNotificationService : IEmailNotificationService
             : MoneyFormatter.FormatFcfa(receipt.RemainingBalance);
 
         var bodyTitle = isEnglish ? "OFFICIAL PAYMENT RECEIPT" : "REÇU OFFICIEL DE PAIEMENT";
-        var greeting = isEnglish
-            ? $"Hello {Encode(receipt.CustomerName)},"
-            : $"Bonjour {Encode(receipt.CustomerName)},";
+        var greeting = GetGreeting(isEnglish, _localNowProvider(), receipt.CustomerName);
         var intro = isEnglish
             ? $"Thank you for your payment. Please find your official PDF receipt attached (<strong>{Encode(receipt.ReceiptNumber)}</strong>)."
             : $"Merci pour votre règlement. Vous trouverez en pièce jointe votre reçu officiel au format PDF (<strong>{Encode(receipt.ReceiptNumber)}</strong>).";
@@ -125,9 +145,7 @@ public sealed class SmtpEmailNotificationService : IEmailNotificationService
             : $"Mise à jour commande {statusChange.OrderNumber} : {newLabel}";
 
         var title = isEnglish ? "ORDER STATUS UPDATE" : "SUIVI DE VOTRE COMMANDE";
-        var greeting = isEnglish
-            ? $"Hello {Encode(statusChange.CustomerName)},"
-            : $"Bonjour {Encode(statusChange.CustomerName)},";
+        var greeting = GetGreeting(isEnglish, _localNowProvider(), statusChange.CustomerName);
 
         var readyBanner = statusChange.NewStatus == OrderStatus.ReadyForPickup
             ? $"<div style=\"background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46;padding:12px;border-radius:8px;margin-bottom:14px;font-weight:bold;\">{Encode(isEnglish ? "Your items are ready for pickup!" : "Bonne nouvelle : vos articles sont prêts à être récupérés !")}</div>"
@@ -176,7 +194,7 @@ public sealed class SmtpEmailNotificationService : IEmailNotificationService
 
         var htmlBody = WrapHtmlEmail(
             isEnglish ? "EMAIL CONFIGURATION TEST" : "TEST DE CONFIGURATION E-MAIL",
-            isEnglish ? "Hello," : "Bonjour,",
+            GetGreeting(isEnglish, _localNowProvider()),
             $"<p>{Encode(isEnglish ? "Your email notification configuration is working properly." : "Votre configuration d'envoi automatique d'e-mails fonctionne correctement.")}</p>",
             "Pressing Manager");
 
