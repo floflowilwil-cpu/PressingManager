@@ -1,5 +1,6 @@
 ﻿using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
+using PressingManager.Core.Entities;
 using PressingManager.Core.Enums;
 using PressingManager.Infrastructure.Services;
 using PressingManager.Tests.Unit;
@@ -11,6 +12,22 @@ public sealed class CustomersOrdersContext : IDisposable
 {
     public CustomersOrdersContext()
     {
+        // L'historique de statut référence l'utilisateur connecté (clé étrangère) : il doit exister en base.
+        using (var db = Db.CreateDbContext())
+        {
+            db.Users.Add(new User
+            {
+                Id = 1,
+                FullName = "Utilisateur Test",
+                Username = "test",
+                PasswordHash = "test",
+                Role = UserRole.FrontDesk,
+                IsActive = true,
+                CreatedAt = Time.GetUtcNow().UtcDateTime
+            });
+            db.SaveChanges();
+        }
+
         Customers = new CustomerService(Db, Session, Time);
         Orders = new OrderService(Db, Session, Time);
         SignInAs(UserRole.FrontDesk);
