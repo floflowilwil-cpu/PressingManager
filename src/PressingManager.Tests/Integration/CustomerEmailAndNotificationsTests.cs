@@ -198,4 +198,133 @@ public sealed class CustomerEmailAndNotificationsTests : IDisposable
         Assert.Contains("CMD-20261125-0010", statusEml);
         Assert.Contains("Ready for pickup", statusEml);
     }
+
+    [Fact]
+    public async Task EmailNotificationService_UsesTimeOfDayGreetingWithCustomerName()
+    {
+        Assert.Equal("Bonjour Marie,", SmtpEmailNotificationService.GetGreeting(false, new DateTime(2026, 11, 26, 5, 0, 0), "Marie"));
+        Assert.Equal("Bonjour Marie,", SmtpEmailNotificationService.GetGreeting(false, new DateTime(2026, 11, 26, 17, 59, 0), "Marie"));
+        Assert.Equal("Bonsoir Marie,", SmtpEmailNotificationService.GetGreeting(false, new DateTime(2026, 11, 26, 18, 0, 0), "Marie"));
+        Assert.Equal("Bonsoir Marie,", SmtpEmailNotificationService.GetGreeting(false, new DateTime(2026, 11, 26, 2, 0, 0), "Marie"));
+        Assert.Equal("Bonsoir,", SmtpEmailNotificationService.GetGreeting(false, new DateTime(2026, 11, 26, 2, 0, 0)));
+
+        Assert.Equal("Good morning John,", SmtpEmailNotificationService.GetGreeting(true, new DateTime(2026, 11, 26, 9, 0, 0), "John"));
+        Assert.Equal("Good afternoon John,", SmtpEmailNotificationService.GetGreeting(true, new DateTime(2026, 11, 26, 15, 0, 0), "John"));
+        Assert.Equal("Good evening John,", SmtpEmailNotificationService.GetGreeting(true, new DateTime(2026, 11, 26, 20, 0, 0), "John"));
+
+        var store = new JsonIntegrationSettingsStore(Path.Combine(_tempDir, "greeting-settings.json"));
+        var outboxDir = Path.Combine(_tempDir, "greeting-outbox");
+        var eveningService = new SmtpEmailNotificationService(store, outboxDir, () => new DateTime(2026, 11, 26, 20, 0, 0));
+
+        var payment = new PaymentDto(
+            Id: 43,
+            OrderId: 11,
+            Amount: 2000m,
+            PaidAt: _clock.GetUtcNow().UtcDateTime,
+            Method: PaymentMethod.MtnMobileMoney,
+            Reference: "MTN-SIM-654321",
+            Status: PaymentStatus.Valid,
+            ReceivedByUserId: _userId,
+            CashSessionId: null,
+            CancelReason: null,
+            CancelledByUserId: null,
+            CancelledAt: null);
+
+        var receipt = PaymentReceiptGenerator.BuildReceipt(
+            payment,
+            "CMD-20261126-0011",
+            "Marie",
+            2000m,
+            2000m,
+            "Caissier");
+
+        var pdfBytes = PaymentReceiptPdfBuilder.BuildReceiptPdfBytes(receipt, isEnglish: false);
+        var receiptResult = await eveningService.SendPaymentReceiptAsync("marie@pressing.cm", receipt, pdfBytes, isEnglish: false);
+        var eveningReceiptHtml = DecodeHtmlBodyFromEml(await File.ReadAllTextAsync(receiptResult.LocalFilePath!));
+
+        Assert.Contains("Bonsoir Marie,", eveningReceiptHtml);
+
+        var statusResult = await eveningService.SendOrderStatusChangedAsync(
+            "marie@pressing.cm",
+            new OrderStatusEmailDto(
+                "CMD-20261126-0011",
+                "Marie",
+                OrderStatus.Received,
+                OrderStatus.Cleaning,
+                null,
+                null,
+                ["1 × Chemise (500 FCFA)"]),
+            isEnglish: false);
+        var eveningStatusHtml = DecodeHtmlBodyFromEml(await File.ReadAllTextAsync(statusResult.LocalFilePath!));
+
+        Assert.Contains("Bonsoir Marie,", eveningStatusHtml);
+
+        var morningService = new SmtpEmailNotificationService(store, outboxDir, () => new DateTime(2026, 11, 26, 10, 0, 0));
+        var morningStatusResult = await morningService.SendOrderStatusChangedAsync(
+            "john@pressing.cm",
+            new OrderStatusEmailDto(
+                "CMD-20261126-0011",
+                "John",
+                OrderStatus.Cleaning,
+                OrderStatus.ReadyForPickup,
+                null,
+                null,
+                ["1 × Chemise (500 FCFA)"]),
+            isEnglish: false);
+        var morningStatusHtml = DecodeHtmlBodyFromEml(await File.ReadAllTextAsync(morningStatusResult.LocalFilePath!));
+
+        Assert.Contains("Bonjour John,", morningStatusHtml);
+    }
+
+    private static string DecodeHtmlBodyFromEml(string emlContent)
+    {
+        var lines = emlContent.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var inHtmlHeaders = false;
+        var inHtmlBody = false;
+        var isBase64 = false;
+        var bodyLines = new List<string>();
+
+        foreach (var line in lines)
+        {
+            if (!inHtmlHeaders && !inHtmlBody)
+            {
+                if (line.StartsWith("Content-Type: text/html", StringComparison.OrdinalIgnoreCase))
+                {
+                    inHtmlHeaders = true;
+                }
+
+                continue;
+            }
+
+            if (inHtmlHeaders)
+            {
+                if (line.StartsWith("Content-Transfer-Encoding: base64", StringComparison.OrdinalIgnoreCase))
+                {
+                    isBase64 = true;
+                }
+                else if (line.Length == 0)
+                {
+                    inHtmlHeaders = false;
+                    inHtmlBody = true;
+                }
+
+                continue;
+            }
+
+            if (line.StartsWith("--", StringComparison.Ordinal) && bodyLines.Count > 0)
+            {
+                break;
+            }
+
+            bodyLines.Add(line);
+        }
+
+        if (isBase64)
+        {
+            var compact = string.Concat(bodyLines.Select(l => l.Trim()));
+            return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(compact));
+        }
+
+        return string.Join('\n', bodyLines).Trim();
+    }
 }

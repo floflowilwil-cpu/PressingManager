@@ -3,15 +3,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:PressingManager.App.Localization"
         Title="{loc:T Ussd_WindowTitle}"
-        Width="450"
-        Height="430"
+        Width="460"
+        SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="#F3F6FB">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -33,7 +33,7 @@
 
         <!-- Corps -->
         <Border Grid.Row="1" Background="White" Margin="18" Padding="18" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1">
-            <StackPanel VerticalAlignment="Center">
+            <StackPanel>
                 <Border Background="#F8FAFC" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                     <Grid>
                         <Grid.ColumnDefinitions>
