@@ -106,6 +106,8 @@ public partial class App : Application
                     db.Database.EnsureCreated();
                 }
 
+                EnsureCustomerEmailColumn(db, hasPostgresConnection);
+
                 // Création des comptes de départ.
                 bool seedUsers =
                     !bool.TryParse(configuration["SeedDemoUsers"], out var flag)
@@ -145,5 +147,37 @@ public partial class App : Application
     {
         _serviceProvider?.Dispose();
         base.OnExit(e);
+    }
+
+    private static void EnsureCustomerEmailColumn(PressingDbContext db, bool hasPostgresConnection)
+    {
+        if (hasPostgresConnection)
+        {
+            db.Database.ExecuteSqlRaw(
+                "ALTER TABLE \"Customers\" ADD COLUMN IF NOT EXISTS \"Email\" character varying(200);");
+            return;
+        }
+
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            connection.Open();
+        }
+
+        using var check = connection.CreateCommand();
+        check.CommandText = "PRAGMA table_info(\"Customers\");";
+        using var reader = check.ExecuteReader();
+        while (reader.Read())
+        {
+            if (string.Equals(reader["name"]?.ToString(), "Email", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+
+        reader.Close();
+        using var alter = connection.CreateCommand();
+        alter.CommandText = "ALTER TABLE \"Customers\" ADD COLUMN \"Email\" TEXT NULL;";
+        alter.ExecuteNonQuery();
     }
 }

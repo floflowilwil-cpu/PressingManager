@@ -7,6 +7,7 @@ using System.Windows.Media;
 using PressingManager.App.Services;
 using PressingManager.App.ViewModels;
 using PressingManager.Core.DTOs;
+using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.Views;
 
@@ -65,7 +66,8 @@ public partial class PaymentManagementView : UserControl
 
     public PaymentManagementView(
         PaymentManagementViewModel viewModel,
-        LanguageService languageService)
+        LanguageService languageService,
+        IMobileMoneyGateway? mobileMoney = null)
     {
         InitializeComponent();
 
@@ -74,6 +76,19 @@ public partial class PaymentManagementView : UserControl
 
         _languageService = languageService
             ?? throw new ArgumentNullException(nameof(languageService));
+
+        if (mobileMoney is not null)
+        {
+            viewModel.RequestMobileMoneyConfirmation = request =>
+            {
+                var prompt = new MobileMoneyPromptWindow(request, mobileMoney)
+                {
+                    Owner = Window.GetWindow(this)
+                };
+
+                return System.Threading.Tasks.Task.FromResult(prompt.ShowDialog() == true ? prompt.Result : null);
+            };
+        }
 
         viewModel.ReceiptReady += OnReceiptReady;
 

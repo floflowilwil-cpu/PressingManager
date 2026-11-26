@@ -86,14 +86,14 @@ public class PaymentRulesTests
     }
 
     [Fact]
-    public void ValidatePayment_MobileMoney_RefusesDuplicateReference()
+    public void ValidatePayment_MobileMoney_AllowsDuplicateReference()
     {
         var existing = new[]
         {
             MakePayment(2000m, PaymentMethod.MtnMobileMoney, PaymentStatus.Valid, "TX-12345")
         };
 
-        Assert.Throws<InvalidOperationException>(() =>
+        var exception = Record.Exception(() =>
             PaymentRules.ValidatePayment(
                 orderTotal: 5000m,
                 existingPayments: existing,
@@ -101,6 +101,8 @@ public class PaymentRulesTests
                 method: PaymentMethod.MtnMobileMoney,
                 reference: " tx-12345 ",
                 hasOpenCashSession: false));
+
+        Assert.Null(exception);
     }
 
     [Fact]

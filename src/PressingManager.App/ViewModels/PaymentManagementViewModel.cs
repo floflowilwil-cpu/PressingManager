@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PressingManager.App.Localization;
@@ -7,6 +8,7 @@ using PressingManager.Core.Common;
 using PressingManager.Core.DTOs;
 using PressingManager.Core.Enums;
 using PressingManager.Core.Interfaces;
+using PressingManager.Infrastructure.Services;
 
 namespace PressingManager.App.ViewModels;
 
@@ -26,7 +28,10 @@ public sealed record PaymentHistoryItem(
     public bool IsValid => Status == PaymentStatus.Valid;
 }
 
-public sealed record PaymentMethodOption(PaymentMethod Value, string Label);
+public sealed record PaymentMethodOption(PaymentMethod Value, string Label)
+{
+    public override string ToString() => Label;
+}
 
 public partial class PaymentManagementViewModel : ObservableObject
 {
@@ -35,21 +40,35 @@ public partial class PaymentManagementViewModel : ObservableObject
     private readonly IExpenseService _expenses;
     private readonly IOrderBillingInfoProvider _orderBilling;
     private readonly ICurrentUserContext _session;
+    private readonly IOrderService? _orders;
+    private readonly IEmailNotificationService? _emailService;
+    private readonly IMobileMoneyGateway? _mobileMoney;
+    private readonly ICustomerService? _customers;
 
     private IReadOnlyList<PaymentDto> _loadedPayments = Array.Empty<PaymentDto>();
+    private string? _ussdConfirmedReference;
+    private string? _loadedOrderCustomerEmail;
 
     public PaymentManagementViewModel(
         IPaymentService payments,
         ICashService cash,
         IExpenseService expenses,
         IOrderBillingInfoProvider orderBilling,
-        ICurrentUserContext session)
+        ICurrentUserContext session,
+        IOrderService? orders = null,
+        IEmailNotificationService? emailService = null,
+        IMobileMoneyGateway? mobileMoney = null,
+        ICustomerService? customers = null)
     {
         _payments = payments ?? throw new ArgumentNullException(nameof(payments));
         _cash = cash ?? throw new ArgumentNullException(nameof(cash));
         _expenses = expenses ?? throw new ArgumentNullException(nameof(expenses));
         _orderBilling = orderBilling ?? throw new ArgumentNullException(nameof(orderBilling));
         _session = session ?? throw new ArgumentNullException(nameof(session));
+        _orders = orders;
+        _emailService = emailService;
+        _mobileMoney = mobileMoney;
+        _customers = customers;
 
         _expenseMethods = BuildExpenseMethods();
         Loc.Instance.LanguageChanged += OnLanguageChanged;
@@ -97,6 +116,12 @@ public partial class PaymentManagementViewModel : ObservableObject
 
     [ObservableProperty]
     private string _transactionReference = string.Empty;
+
+    [ObservableProperty]
+    private string _payerPhone = string.Empty;
+
+    [ObservableProperty]
+    private string _payerEmail = string.Empty;
 
     [ObservableProperty]
     private string _cancelReason = string.Empty;
@@ -152,6 +177,13 @@ public partial class PaymentManagementViewModel : ObservableObject
 
     public bool IsMobileMoneySelected => PaymentRules.RequiresReference(SelectedMethod);
 
+    public string MobileMoneyModeLabel => _mobileMoney?.IsLiveMode == true
+        ? Loc.Instance["Pay_UssdModeLive"]
+        : Loc.Instance["Pay_UssdModeSim"];
+
+    /// <summary>Ouvre l'invite USSD MTN/Orange cote vue pour confirmer un paiement sur le telephone.</summary>
+    public Func<MobileMoneyChargeRequest, Task<MobileMoneyChargeResult?>>? RequestMobileMoneyConfirmation { get; set; }
+
     public bool IsCashSessionOpen => CurrentCashSession is { Status: CashSessionStatus.Open };
 
     public string CashStatusLabel => IsCashSessionOpen
@@ -174,29 +206,94 @@ public partial class PaymentManagementViewModel : ObservableObject
     /// <summary>Declenche l'ouverture de la fenetre de confirmation et d'impression du recu.</summary>
     public event EventHandler<PaymentReceiptDto>? ReceiptReady;
 
+    partial void OnSelectedMethodChanged(PaymentMethod value) => _ussdConfirmedReference = null;
+
+    partial void OnPaymentAmountTextChanged(string value) => _ussdConfirmedReference = null;
+
     [RelayCommand]
     private void SelectMethod(PaymentMethod method) => SelectedMethod = method;
 
     [RelayCommand]
     private Task LoadAsync() => RunAsync(async () =>
     {
+        OnPropertyChanged(nameof(MobileMoneyModeLabel));
         CurrentCashSession = await _cash.GetCurrentAsync();
         await RefreshExpensesAsync();
     }, successKey: null);
 
     [RelayCommand]
+    private Task TriggerMobileMoneyAsync() => RunAsync(async () =>
+    {
+        _ = RequireLoadedOrderId();
+        if (!IsMobileMoneySelected)
+        {
+            throw new InvalidOperationException(Loc.Instance["Pay_Err_SelectMomoFirst"]);
+        }
+
+        var amount = ParsePositiveAmount(PaymentAmountText, "Pay_Field_PaymentAmount");
+        var result = await ExecuteUssdPromptAsync(amount);
+        if (result is null || !result.Success || string.IsNullOrWhiteSpace(result.OperatorReference))
+        {
+            throw new InvalidOperationException(result?.StatusMessage ?? Loc.Instance["Pay_UssdCancelled"]);
+        }
+
+        _ussdConfirmedReference = result.OperatorReference;
+        TransactionReference = result.OperatorReference;
+        Message = result.IsSimulated
+            ? Loc.Instance.Format("Pay_UssdSimConfirmed", result.OperatorReference)
+            : Loc.Instance.Format("Pay_UssdLiveConfirmed", result.OperatorReference);
+    }, successKey: null);
+
+    [RelayCommand]
     private Task LoadOrderAsync() => RunAsync(async () =>
     {
-        if (!int.TryParse(OrderIdText.Trim(), out var orderId) || orderId <= 0)
+        var input = (OrderIdText ?? string.Empty).Trim();
+        var numericCandidate = input.StartsWith('#') ? input[1..] : input;
+        int orderId;
+
+        if (int.TryParse(numericCandidate, out var parsedId) && parsedId > 0)
+        {
+            orderId = parsedId;
+        }
+        else if (_orders is not null && input.Length > 0)
+        {
+            var found = await _orders.GetByNumberAsync(input)
+                ?? throw new InvalidOperationException(Loc.Instance.Format("Pay_Err_OrderNumberNotFound", input));
+
+            orderId = found.Id;
+            OrderIdText = orderId.ToString(CultureInfo.InvariantCulture);
+        }
+        else
         {
             throw new InvalidOperationException(Loc.Instance["Pay_Err_InvalidOrderId"]);
         }
 
+        await LoadOrderAndPrefillAsync(orderId);
+    }, successKey: null);
+
+    /// <summary>Charge directement une commande (utilise lors du clic sur Encaisser depuis l'onglet Commandes).</summary>
+    public Task LoadOrderByIdAsync(int orderId, PaymentMethod? preferredMethod = null) => RunAsync(async () =>
+    {
+        Message = null;
+        OnPropertyChanged(nameof(MobileMoneyModeLabel));
+        OrderIdText = orderId.ToString(CultureInfo.InvariantCulture);
+        CurrentCashSession = await _cash.GetCurrentAsync();
+        await RefreshExpensesAsync();
+        await LoadOrderAndPrefillAsync(orderId);
+
+        if (preferredMethod is { } method)
+        {
+            SelectedMethod = method;
+        }
+    }, successKey: null);
+
+    private async Task LoadOrderAndPrefillAsync(int orderId)
+    {
         await RefreshOrderAsync(orderId);
         PaymentAmountText = RemainingBalance > 0m
             ? RemainingBalance.ToString("0.##", CultureInfo.CurrentCulture)
             : string.Empty;
-    }, successKey: null);
+    }
 
     [RelayCommand]
     private Task RegisterPaymentAsync() => RunAsync(async () =>
@@ -204,6 +301,30 @@ public partial class PaymentManagementViewModel : ObservableObject
         var orderId = RequireLoadedOrderId();
         var amount = ParsePositiveAmount(PaymentAmountText, "Pay_Field_PaymentAmount");
         var userId = _session.CurrentUser?.Id ?? 0;
+        var recipientEmail = (PayerEmail ?? string.Empty).Trim();
+
+        // Si MTN/Orange est choisi et n'a pas encore ete confirme par USSD, declencher l'invite telephone.
+        if (IsMobileMoneySelected)
+        {
+            var typedRef = (TransactionReference ?? string.Empty).Trim();
+            var alreadyConfirmedViaUssd = !string.IsNullOrWhiteSpace(_ussdConfirmedReference)
+                && string.Equals(typedRef, _ussdConfirmedReference, StringComparison.Ordinal);
+
+            if (!alreadyConfirmedViaUssd)
+            {
+                var ussdResult = await ExecuteUssdPromptAsync(amount);
+                if (ussdResult is null || !ussdResult.Success || string.IsNullOrWhiteSpace(ussdResult.OperatorReference))
+                {
+                    throw new InvalidOperationException(ussdResult?.StatusMessage ?? Loc.Instance["Pay_UssdCancelled"]);
+                }
+
+                _ussdConfirmedReference = ussdResult.OperatorReference;
+                if (!ussdResult.IsSimulated || typedRef.Length == 0)
+                {
+                    TransactionReference = ussdResult.OperatorReference;
+                }
+            }
+        }
 
         var created = await _payments.RegisterAsync(new RegisterPaymentDto(
             orderId,
@@ -212,8 +333,20 @@ public partial class PaymentManagementViewModel : ObservableObject
             userId,
             IsMobileMoneySelected ? TransactionReference : null));
 
+        _ussdConfirmedReference = null;
         TransactionReference = string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(recipientEmail) && string.IsNullOrWhiteSpace(_loadedOrderCustomerEmail))
+        {
+            await TryPersistOrderCustomerEmailAsync(recipientEmail);
+        }
+
         await RefreshOrderAsync(orderId);
+
+        if (string.IsNullOrWhiteSpace(PayerEmail) && !string.IsNullOrWhiteSpace(recipientEmail))
+        {
+            PayerEmail = recipientEmail;
+        }
 
         PaymentAmountText = RemainingBalance > 0m
             ? RemainingBalance.ToString("0.##", CultureInfo.CurrentCulture)
@@ -221,8 +354,98 @@ public partial class PaymentManagementViewModel : ObservableObject
 
         var receipt = BuildReceiptFromDto(created);
         LatestReceipt = receipt;
+
+        var message = Loc.Instance["Pay_Msg_PaymentSaved"];
+        if (_emailService is not null && !string.IsNullOrWhiteSpace(recipientEmail))
+        {
+            var pdfBytes = PaymentReceiptPdfBuilder.BuildReceiptPdfBytes(receipt, Loc.Instance.IsEnglish);
+            var delivery = await _emailService.SendPaymentReceiptAsync(
+                recipientEmail,
+                receipt,
+                pdfBytes,
+                Loc.Instance.IsEnglish);
+
+            message += " " + FormatReceiptEmailNote(recipientEmail, delivery);
+        }
+
+        Message = message;
         ReceiptReady?.Invoke(this, receipt);
-    }, "Pay_Msg_PaymentSaved");
+    }, successKey: null);
+
+    private async Task<MobileMoneyChargeResult?> ExecuteUssdPromptAsync(decimal amount)
+    {
+        var phone = (PayerPhone ?? string.Empty).Trim();
+        if (phone.Length == 0)
+        {
+            throw new InvalidOperationException(Loc.Instance["Pay_Err_PhoneRequired"]);
+        }
+
+        _mobileMoney?.NormalizeCameroonPhone(phone);
+
+        var request = new MobileMoneyChargeRequest(
+            SelectedMethod,
+            phone,
+            amount,
+            OrderNumber,
+            $"Pressing Manager - {OrderNumber}");
+
+        if (RequestMobileMoneyConfirmation is not null)
+        {
+            return await RequestMobileMoneyConfirmation(request);
+        }
+
+        return _mobileMoney is null ? null : await _mobileMoney.RequestPaymentAsync(request);
+    }
+
+    private static string FormatReceiptEmailNote(string email, EmailDeliveryResult delivery)
+    {
+        if (delivery.SentViaSmtp)
+        {
+            return Loc.Instance.Format("Pay_ReceiptEmailSent", email);
+        }
+
+        if (delivery.SavedLocally && delivery.LocalFilePath is { } path)
+        {
+            return Loc.Instance.Format("Pay_ReceiptEmailSaved", Path.GetFileName(path));
+        }
+
+        return Loc.Instance.Format("Pay_ReceiptEmailWarn", delivery.ErrorMessage ?? "Erreur SMTP");
+    }
+
+    private async Task TryPersistOrderCustomerEmailAsync(string email)
+    {
+        if (_customers is null || _orders is null || !_session.HasPermission(Permission.ManageCustomers))
+        {
+            return;
+        }
+
+        try
+        {
+            var orderDetails = await _orders.GetByNumberAsync(OrderNumber);
+            if (orderDetails is null)
+            {
+                return;
+            }
+
+            var customer = await _customers.GetByIdAsync(orderDetails.CustomerId);
+            if (customer is null || !string.IsNullOrWhiteSpace(customer.Email))
+            {
+                return;
+            }
+
+            await _customers.UpdateAsync(new UpdateCustomerDto(
+                customer.Id,
+                customer.FullName,
+                customer.Phone,
+                customer.Address,
+                customer.Notes,
+                email));
+        }
+        catch (Exception ex) when (ex is BusinessRuleException or PermissionDeniedException)
+        {
+            // N'interrompt pas l'encaissement si l'e-mail ne peut pas etre persiste sur la fiche client.
+        }
+    }
 
     [RelayCommand]
     private void OpenLatestReceipt()
@@ -372,6 +595,10 @@ public partial class PaymentManagementViewModel : ObservableObject
         LoadedOrderId = order.OrderId;
         OrderNumber = string.IsNullOrWhiteSpace(order.OrderNumber) ? $"CMD-{order.OrderId:D4}" : order.OrderNumber;
         CustomerName = string.IsNullOrWhiteSpace(order.CustomerName) ? Loc.Instance["Pay_DefaultCustomer"] : order.CustomerName;
+        PayerPhone = order.CustomerPhone ?? string.Empty;
+        _loadedOrderCustomerEmail = order.CustomerEmail;
+        PayerEmail = order.CustomerEmail ?? string.Empty;
+        _ussdConfirmedReference = null;
         OrderTotal = order.TotalAmount;
         RemainingBalance = balance;
         IsOrderLoaded = true;
@@ -412,6 +639,7 @@ public partial class PaymentManagementViewModel : ObservableObject
         OnPropertyChanged(nameof(ExpenseMethod));
         OnPropertyChanged(nameof(CashStatusLabel));
         OnPropertyChanged(nameof(LatestReceiptSummary));
+        OnPropertyChanged(nameof(MobileMoneyModeLabel));
         RebuildPaymentRows(SelectedPayment?.Id);
 
         if (IsOrderLoaded && CustomerName is "Client" or "Customer")

@@ -60,6 +60,11 @@ public static class DependencyInjection
         // Module traitement, services, tarifs et stocks (Personne 3)
         services.AddProcessingAndInventoryServices();
 
+        // Integrations e-mail & passerelle Mobile Money
+        services.AddSingleton<IIntegrationSettingsStore, JsonIntegrationSettingsStore>();
+        services.AddSingleton<IEmailNotificationService, SmtpEmailNotificationService>();
+        services.AddSingleton<IMobileMoneyGateway, CampayMobileMoneyGateway>();
+
         return services;
     }
 }

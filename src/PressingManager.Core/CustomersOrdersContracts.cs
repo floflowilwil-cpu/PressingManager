@@ -12,20 +12,23 @@ namespace PressingManager.Core.DTOs
         string? Address,
         string? Notes,
         bool IsActive,
-        DateTime CreatedAt);
+        DateTime CreatedAt,
+        string? Email = null);
 
     public record CreateCustomerDto(
         string FullName,
         string Phone,
         string? Address = null,
-        string? Notes = null);
+        string? Notes = null,
+        string? Email = null);
 
     public record UpdateCustomerDto(
         int Id,
         string FullName,
         string Phone,
         string? Address = null,
-        string? Notes = null);
+        string? Notes = null,
+        string? Email = null);
 
     // ---------- COMMANDES ----------
 
@@ -84,7 +87,9 @@ namespace PressingManager.Core.DTOs
         decimal Fees,
         decimal Total,
         string? Notes,
-        List<OrderItemDto> Items);
+        List<OrderItemDto> Items,
+        string? CustomerPhone = null,
+        string? CustomerEmail = null);
 
     // Critères de recherche de commandes (tous facultatifs).
     // SearchText : numéro de commande, nom ou téléphone du client.

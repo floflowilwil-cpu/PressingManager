@@ -130,6 +130,10 @@ namespace PressingManager.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(150)

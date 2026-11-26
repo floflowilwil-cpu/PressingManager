@@ -10,7 +10,9 @@ public sealed record OrderBillingInfoDto(
     decimal TotalAmount,
     bool IsCancelled,
     string? OrderNumber = null,
-    string? CustomerName = null);
+    string? CustomerName = null,
+    string? CustomerPhone = null,
+    string? CustomerEmail = null);
 
 /// <summary>
 /// Demande d'enregistrement d'un paiement client.

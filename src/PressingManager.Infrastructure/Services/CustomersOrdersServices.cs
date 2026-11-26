@@ -12,9 +12,13 @@ namespace PressingManager.Infrastructure.Services;
 internal static class CustomersOrdersMapping
 {
     public static CustomerDto ToCustomerDto(Customer c) =>
-        new(c.Id, c.CustomerNumber, c.FullName, c.Phone, c.Address, c.Notes, c.IsActive, c.CreatedAt);
+        new(c.Id, c.CustomerNumber, c.FullName, c.Phone, c.Address, c.Notes, c.IsActive, c.CreatedAt, c.Email);
 
-    public static OrderDetailsDto ToOrderDto(Order o, string? customerName = null) =>
+    public static OrderDetailsDto ToOrderDto(
+        Order o,
+        string? customerName = null,
+        string? customerPhone = null,
+        string? customerEmail = null) =>
         new(
             o.Id,
             o.OrderNumber,
@@ -31,7 +35,9 @@ internal static class CustomersOrdersMapping
             o.Items
                 .Select(i => new OrderItemDto(
                     i.Id, i.ServiceId, i.ItemType, i.Quantity, i.UnitPrice, i.LineTotal, i.Observations))
-                .ToList());
+                .ToList(),
+            customerPhone ?? o.Customer?.Phone,
+            customerEmail ?? o.Customer?.Email);
 
     /// <summary>Supprime les espaces ; renvoie null si vide ; refuse un texte trop long.</summary>
     public static string? Clean(string? value, int maxLength, string label)
@@ -48,6 +54,27 @@ internal static class CustomersOrdersMapping
         }
 
         return text;
+    }
+
+    public static string? CleanEmail(string? value)
+    {
+        var email = Clean(value, 200, "L'adresse e-mail");
+        if (email is null)
+        {
+            return null;
+        }
+
+        var at = email.IndexOf('@');
+        if (!System.Net.Mail.MailAddress.TryCreate(email, out var parsed)
+            || !string.Equals(parsed.Address, email, StringComparison.OrdinalIgnoreCase)
+            || at <= 0
+            || email.IndexOf('.', at) <= at + 1
+            || email.EndsWith('.'))
+        {
+            throw new BusinessRuleException("L'adresse e-mail du client est invalide.");
+        }
+
+        return email;
     }
 
     // Les caractères % et _ ont un sens spécial dans une recherche LIKE : on les neutralise.
@@ -101,7 +128,8 @@ public sealed class CustomerService : ICustomerService
             query = query.Where(c =>
                 EF.Functions.Like(c.FullName.ToLower(), pattern, "\\") ||
                 EF.Functions.Like(c.Phone.ToLower(), pattern, "\\") ||
-                EF.Functions.Like(c.CustomerNumber.ToLower(), pattern, "\\"));
+                EF.Functions.Like(c.CustomerNumber.ToLower(), pattern, "\\") ||
+                (c.Email != null && EF.Functions.Like(c.Email.ToLower(), pattern, "\\")));
         }
 
         var customers = await query
@@ -118,6 +146,7 @@ public sealed class CustomerService : ICustomerService
         _session.Require(Permission.ManageCustomers);
 
         var (name, phone) = Validate(request.FullName, request.Phone);
+        var email = CustomersOrdersMapping.CleanEmail(request.Email);
         var address = CustomersOrdersMapping.Clean(request.Address, 300, "L'adresse");
         var notes = CustomersOrdersMapping.Clean(request.Notes, 1000, "Les notes");
         var nameLower = name.ToLower();
@@ -147,6 +176,7 @@ public sealed class CustomerService : ICustomerService
                 CustomerNumber = number,
                 FullName = name,
                 Phone = phone,
+                Email = email,
                 Address = address,
                 Notes = notes,
                 IsActive = true,
@@ -194,6 +224,7 @@ public sealed class CustomerService : ICustomerService
         _session.Require(Permission.ManageCustomers);
 
         var (name, phone) = Validate(request.FullName, request.Phone);
+        var email = CustomersOrdersMapping.CleanEmail(request.Email);
         var address = CustomersOrdersMapping.Clean(request.Address, 300, "L'adresse");
         var notes = CustomersOrdersMapping.Clean(request.Notes, 1000, "Les notes");
 
@@ -212,6 +243,7 @@ public sealed class CustomerService : ICustomerService
 
         customer.FullName = name;
         customer.Phone = phone;
+        customer.Email = email;
         customer.Address = address;
         customer.Notes = notes;
 
@@ -413,7 +445,6 @@ public sealed class OrderService : IOrderService
 
                 db.Orders.Add(order);
                 await db.SaveChangesAsync(cancellationToken);
-
                 db.OrderStatusHistory.Add(new OrderStatusHistory
                 {
                     OrderId = order.Id,
@@ -424,10 +455,16 @@ public sealed class OrderService : IOrderService
                     IsCorrection = false,
                     Comment = "Création de la commande"
                 });
+
                 await db.SaveChangesAsync(cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
-                return CustomersOrdersMapping.ToOrderDto(order, customer.FullName);
+
+                return CustomersOrdersMapping.ToOrderDto(
+                    order,
+                    customer.FullName,
+                    customer.Phone,
+                    customer.Email);
             }
             catch (DbUpdateException)
             {

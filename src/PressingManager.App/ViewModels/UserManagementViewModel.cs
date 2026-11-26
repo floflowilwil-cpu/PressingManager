@@ -10,7 +10,10 @@ using PressingManager.Core.Interfaces;
 
 namespace PressingManager.App.ViewModels;
 
-public sealed record RoleOption(UserRole Value, string Label);
+public sealed record RoleOption(UserRole Value, string Label)
+{
+    public override string ToString() => Label;
+}
 
 public sealed record UserRow(UserDto Source)
 {
